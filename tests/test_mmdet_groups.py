@@ -11,3 +11,11 @@ def test_official_baseline_groups_are_disjoint_and_named():
     assert 'BASELINE_CONDA_ENV:-finetune-sd' in launcher
     assert (root / "scripts/launch_official_baselines_group1.sh").is_file()
     assert (root / "scripts/launch_official_baselines_group2.sh").is_file()
+
+
+def test_mmdet_setup_uses_finetune_torch_without_build_isolation():
+    root = Path(__file__).resolve().parents[1]
+    setup = (root / "scripts/setup_official_baselines.sh").read_text()
+    assert 'import torch' in setup
+    assert '"finetune-sd" not in sys.executable' in setup
+    assert '--no-deps --no-build-isolation' in setup
