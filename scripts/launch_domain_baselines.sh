@@ -15,7 +15,7 @@ for GPU in 0 1 2 3; do
           maskrcnn_consensus) SCRIPT="scripts/run_maskrcnn_consensus_seed.sh";;
           detr_crop_unet) SCRIPT="scripts/run_detr_crop_unet_seed.sh";;
         esac
-        QUEUE+=" bash ${SCRIPT} ${SEED} ${GPU} 2>&1 | tee ${ARTIFACT_ROOT}/logs/${METHOD}_s${SEED}.log;"
+        QUEUE+=" bash scripts/run_with_gpu_limit.sh ${GPU} ${ARTIFACT_ROOT}/logs/${METHOD}_s${SEED}.log bash ${SCRIPT} ${SEED} ${GPU};"
       fi
       INDEX=$((INDEX + 1))
     done

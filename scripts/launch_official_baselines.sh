@@ -12,7 +12,7 @@ for GPU in 0 1 2 3; do
   for MODEL in "${MODELS[@]}"; do
     for SEED in "${SEEDS[@]}"; do
       if (( INDEX % 4 == GPU )); then
-        QUEUE+=" bash scripts/run_mmdet_seed.sh ${MODEL} ${SEED} ${GPU} 2>&1 | tee ${ARTIFACT_ROOT}/logs/${MODEL}_s${SEED}.log;"
+        QUEUE+=" bash scripts/run_with_gpu_limit.sh ${GPU} ${ARTIFACT_ROOT}/logs/${MODEL}_s${SEED}.log bash scripts/run_mmdet_seed.sh ${MODEL} ${SEED} ${GPU};"
       fi
       INDEX=$((INDEX + 1))
     done

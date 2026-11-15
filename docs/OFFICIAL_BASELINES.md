@@ -4,6 +4,11 @@ All baselines use the committed grouped MAGFiLO split, source resolution
 2048×2048, seeds 3020–3024, validation-only checkpoint/decoder selection, and
 the shared pooled-PQ implementation. Test is never used for tuning.
 
+Launchers preserve their deterministic GPU assignment but pass every job
+through a cross-launcher `nvidia-smi`/`flock` gate. The default maximum is two
+simultaneous compute processes per GPU; additional jobs remain queued until a
+slot becomes available.
+
 ## Methods and provenance
 
 | key | method | implementation source |

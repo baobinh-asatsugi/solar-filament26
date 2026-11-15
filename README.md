@@ -114,6 +114,16 @@ bash scripts/launch_five_seeds_tmux.sh
 tmux ls
 ```
 
+Every launcher uses `scripts/run_with_gpu_limit.sh`. The default global gate is
+at most two compute jobs per physical GPU, including jobs already visible to
+`nvidia-smi` from another launcher. A queued job waits and starts automatically
+when its assigned GPU drops below the limit. Override only when intentional:
+
+```bash
+export MAX_JOBS_PER_GPU=2
+export GPU_POLL_SECONDS=15
+```
+
 ## Run 14 baselines
 
 All methods consume the same 2048×2048 source canvas. Architecture-native
