@@ -96,7 +96,6 @@ def main() -> None:
         scheduler.step(); metrics = validate(model, val_loader, device, args.exclusion_weight)
         row = {"epoch": epoch, "train_loss": running / max(len(train_loader), 1), **metrics}; history.append(row); print(json.dumps(row))
         checkpoint = {"model": model.state_dict(), "config": config, "epoch": epoch, "metrics": metrics}
-        torch.save(checkpoint, run_dir / "last.pt")
         if metrics["dice"] > best: best = metrics["dice"]; torch.save(checkpoint, run_dir / "best.pt")
         write_json(run_dir / "history.json", {"epochs": history, "best_candidate_dice": best})
     record_event(paths.artifact_root, args.run_name, "sira_train_complete", {"best_candidate_dice": best})

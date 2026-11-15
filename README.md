@@ -161,6 +161,23 @@ artifact directory and builds all eight adapted configs before training.
 Detailed provenance and direct one-seed commands are in
 [`docs/OFFICIAL_BASELINES.md`](docs/OFFICIAL_BASELINES.md).
 
+## Checkpoint storage policy
+
+Every trainer retains only its validation-selected best model checkpoint after
+successful training. Periodic epoch snapshots and `last.pt`/`last.pth` are not
+kept; small histories, metrics, configs, and plots remain available for audit.
+To inspect historical artifacts before pruning them:
+
+```bash
+python scripts/prune_nonbest_checkpoints.py --artifact-root "$ARTIFACT_ROOT"
+```
+
+After reviewing the dry-run list, apply the cleanup with:
+
+```bash
+python scripts/prune_nonbest_checkpoints.py --artifact-root "$ARTIFACT_ROOT" --apply
+```
+
 ## Summarize all 75 test runs
 
 After five seeds of M2-Lite and 14 baselines have finished:

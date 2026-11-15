@@ -15,6 +15,7 @@ if int(np.__version__.split(".")[0]) >= 2:
 
 from ultralytics import YOLO
 
+from .checkpoint_policy import retain_only_best_checkpoint
 from .config import add_config_arg, add_path_args, add_run_args, parse_args_with_config, paths_from_args
 from .experiment import record_event, sha256_file, write_json
 
@@ -32,9 +33,11 @@ def main() -> None:
     parser.add_argument("--workers", type=int, default=8)
     parser.add_argument("--seed", type=int, default=3020)
     parser.add_argument("--device", default=None, help="Examples: 0 or 0,1. Default auto-detects.")
-    parser.add_argument("--resume", nargs="?", const="auto", default=None, help="Resume last.pt or an explicit checkpoint")
+    parser.add_argument(
+        "--resume", nargs="?", const="auto", default=None,
+        help="Resume an interrupted run from its temporary last.pt or an explicit checkpoint",
+    )
     parser.add_argument("--patience", type=int, default=20)
-    parser.add_argument("--save-period", type=int, default=1)
     parser.add_argument("--optimizer", default="auto")
     parser.add_argument("--lr0", type=float, default=None)
     parser.add_argument("--mosaic", type=float, default=1.0)
@@ -76,7 +79,7 @@ def main() -> None:
         if not resume_checkpoint.is_file():
             raise FileNotFoundError(resume_checkpoint)
         model = YOLO(str(resume_checkpoint))
-        model.train(resume=True)
+        model.train(resume=True, save_period=-1)
     else:
         if run_dir.exists():
             raise FileExistsError(
@@ -87,7 +90,7 @@ def main() -> None:
             data=str(data_yaml), project=str(paths.runs_root), name=args.run_name, exist_ok=False,
             imgsz=args.imgsz, epochs=args.epochs, batch=args.batch, workers=args.workers,
             device=device, seed=args.seed, deterministic=True, single_cls=args.single_cls,
-            cache=False, amp=True, patience=args.patience, save=True, save_period=args.save_period,
+            cache=False, amp=True, patience=args.patience, save=True, save_period=-1,
             plots=True, close_mosaic=args.close_mosaic, optimizer=args.optimizer,
             mosaic=args.mosaic, mixup=args.mixup, translate=args.translate, scale=args.scale,
             degrees=args.degrees, fliplr=args.fliplr, flipud=args.flipud,
@@ -98,11 +101,15 @@ def main() -> None:
             kwargs["lr0"] = args.lr0
         model.train(**kwargs)
     best = run_dir / "weights" / "best.pt"
+    removed = retain_only_best_checkpoint(run_dir, best)
     record_event(
         paths.artifact_root,
         args.run_name,
         "train_complete",
-        {"best_checkpoint": str(best), "best_sha256": sha256_file(best) if best.is_file() else None},
+        {
+            "best_checkpoint": str(best), "best_sha256": sha256_file(best),
+            "removed_nonbest_checkpoints": [str(path) for path in removed],
+        },
     )
     print(f"Best checkpoint: {best}")
 

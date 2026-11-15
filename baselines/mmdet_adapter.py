@@ -8,6 +8,8 @@ from mmengine.config import Config
 from mmengine.runner import Runner
 from mmdet.utils import register_all_modules
 
+from filament.checkpoint_policy import retain_only_best_checkpoint
+
 
 def _diff(left, right, prefix="") -> list[str]:
     if isinstance(left, dict) and isinstance(right, dict):
@@ -36,10 +38,14 @@ def _allowed(path: str) -> bool:
     dataset = path.startswith(("train_dataloader.dataset", "val_dataloader.dataset", "test_dataloader.dataset"))
     evaluator = path.startswith(("val_evaluator.", "test_evaluator.")) and path.rsplit(".", 1)[-1] in {"ann_file", "metric"}
     runtime = path in {"work_dir", "resume", "randomness", "auto_scale_lr.enable"}
+    checkpoint_policy = path.startswith("default_hooks.checkpoint.") and path.rsplit(".", 1)[-1] in {
+        "interval", "max_keep_ckpts", "rule", "save_best", "save_last",
+        "save_optimizer", "save_param_scheduler",
+    }
     shared_input = path.startswith(("train_dataloader.dataset", "val_dataloader.dataset", "test_dataloader.dataset")) and any(
         token in path for token in (".scale", ".scales", ".img_scale", ".size")
     )
-    return model_class or dataset or evaluator or runtime or shared_input
+    return model_class or dataset or evaluator or runtime or shared_input or checkpoint_policy
 
 
 def _set_num_classes(value) -> None:
@@ -117,6 +123,15 @@ def main() -> None:
     cfg.work_dir = str(args.work_dir.resolve())
     cfg.randomness = dict(seed=args.seed, deterministic=True)
     cfg.resume = args.resume
+    checkpoint_hook = cfg.default_hooks.checkpoint
+    # Disable periodic epoch snapshots. Validation still triggers save_best.
+    checkpoint_hook.interval = -1
+    checkpoint_hook.save_best = "coco/segm_mAP"
+    checkpoint_hook.rule = "greater"
+    checkpoint_hook.max_keep_ckpts = 1
+    checkpoint_hook.save_last = False
+    checkpoint_hook.save_optimizer = False
+    checkpoint_hook.save_param_scheduler = False
     if "auto_scale_lr" in cfg:
         cfg.auto_scale_lr.enable = True
     args.work_dir.mkdir(parents=True, exist_ok=True)
@@ -127,10 +142,27 @@ def main() -> None:
     (args.work_dir / "adaptation_audit.json").write_text(json.dumps({
         "upstream_config": str(args.config.resolve()), "changed_paths": changed,
         "shared_input_size": args.input_size,
-        "invariant": "Only dataset/evaluator paths, one-class dimensions, the shared 2048 input size, seed/runtime, and auto LR scaling may change.",
+        "invariant": "Only dataset/evaluator paths, one-class dimensions, the shared 2048 input size, seed/runtime, best-only checkpoint retention, and auto LR scaling may change.",
     }, indent=2) + "\n")
     cfg.dump(args.work_dir / "adapted_config.py")
     Runner.from_cfg(cfg).train()
+
+    best_candidates = sorted(
+        args.work_dir.glob("best_*.pth"), key=lambda path: path.stat().st_mtime
+    )
+    if not best_candidates:
+        raise RuntimeError(
+            f"MMDetection did not produce a best validation checkpoint in {args.work_dir}"
+        )
+    selected = best_candidates[-1]
+    best_checkpoint = args.work_dir / "best.pth"
+    if selected.resolve() != best_checkpoint.resolve():
+        selected.replace(best_checkpoint)
+    retain_only_best_checkpoint(args.work_dir, best_checkpoint)
+    (args.work_dir / "best_checkpoint").write_text(str(best_checkpoint.resolve()) + "\n")
+    legacy_pointer = args.work_dir / "last_checkpoint"
+    if legacy_pointer.exists():
+        legacy_pointer.unlink()
 
 
 if __name__ == "__main__":

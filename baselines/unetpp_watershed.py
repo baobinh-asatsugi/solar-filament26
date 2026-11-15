@@ -132,7 +132,6 @@ def train(args):
                 intersection += float((pred & target.bool()).sum()); denominator += float(pred.sum() + target.sum())
         dice = 2 * intersection / max(denominator, 1); print(json.dumps({"epoch": epoch, "loss": total/len(loaders[0]), "val_dice": dice}))
         payload = {"model": model.state_dict(), "epoch": epoch, "seed": args.seed}
-        torch.save(payload, args.output_dir / "last.pt")
         if dice > best: best, bad_epochs = dice, 0; torch.save(payload, args.output_dir / "best.pt")
         else: bad_epochs += 1
         if bad_epochs >= 20: break

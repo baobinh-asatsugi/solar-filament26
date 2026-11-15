@@ -158,7 +158,6 @@ def main() -> None:
         history.append(row)
         print(json.dumps(row))
         checkpoint = {"model": model.state_dict(), "config": config, "epoch": epoch, "metrics": metrics}
-        torch.save(checkpoint, run_dir / "last.pt")
         if score > best_score:
             best_score = score
             torch.save(checkpoint, run_dir / "best.pt")

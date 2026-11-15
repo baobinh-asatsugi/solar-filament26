@@ -8,6 +8,7 @@ from pathlib import Path
 from ultralytics import RTDETR
 
 from baselines.common import INPUT_SIZE
+from filament.checkpoint_policy import retain_only_best_checkpoint
 
 
 def main() -> None:
@@ -24,9 +25,13 @@ def main() -> None:
         data=str(args.data.resolve()), project=str((args.artifact_root / "runs").resolve()), name=run_name,
         imgsz=INPUT_SIZE, epochs=args.epochs, batch=1, workers=6, device=args.device,
         seed=args.seed, deterministic=True, cache=False, amp=True, patience=10,
+        save=True, save_period=-1,
         mosaic=0.0, mixup=0.0, translate=0.0, scale=0.1, fliplr=0.5, flipud=0.5,
     )
-    print(args.artifact_root / "runs" / run_name / "weights" / "best.pt")
+    run_dir = args.artifact_root / "runs" / run_name
+    best = run_dir / "weights" / "best.pt"
+    retain_only_best_checkpoint(run_dir, best)
+    print(best)
 
 
 if __name__ == "__main__":
