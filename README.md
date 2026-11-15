@@ -5,10 +5,8 @@ MAGFiLO v1.0 dataset. Every method uses the same frozen physical-image split,
 the same five seeds, the same 2048×2048 source images, validation-only model
 selection, and the same pooled panoptic-quality evaluator.
 
-The historical M2-Lite system produced public PQ `0.39` in the earlier Kaggle
-protocol. That number is retained only as provenance: results on the new full
-MAGFiLO split are not directly comparable and must be reported as five-seed
-mean ± standard deviation.
+All reported results must use the committed full-MAGFiLO protocol below and be
+reported as five-seed mean ± standard deviation.
 
 ## M2-Lite architecture
 

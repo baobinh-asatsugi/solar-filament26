@@ -1,11 +1,5 @@
-# Competition data and archives
-/filament-segmentation-2026/
-/filament-segmentation-2026.zip
-/MAGFiLO_1.0_Kaggle_2026/
+# Private data and archives
 /magfilo/
-**/data_extracted/
-**/train_images/
-**/test_images/
 
 # Generated datasets, predictions, runs, and submissions
 /artifacts/
@@ -19,7 +13,6 @@
 /runs/
 /submissions/
 /yolo_dataset/
-submission*.csv
 *.metadata.json
 
 # Model weights and large ML artifacts
@@ -37,10 +30,6 @@ events.out.tfevents.*
 /wandb/
 /mlruns/
 /lightning_logs/
-
-# Kaggle/API credentials
-kaggle.json
-/.kaggle/
 
 # Python environments and caches
 .venv/

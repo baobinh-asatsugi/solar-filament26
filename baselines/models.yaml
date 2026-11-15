@@ -41,7 +41,7 @@ unetpp_watershed:
   github: https://github.com/MrGiovanni/UNetPlusPlus
 fullres_unet:
   config: resnet34-unet-full-resolution-2048
-  paper: https://www.kaggle.com/competitions/filament-segmentation-2026
+  paper: https://github.com/rodchemist/solar-filament-segmentation-2026
   github: https://github.com/rodchemist/solar-filament-segmentation-2026
   commit: 39afbb157a4711a52f142991e503ede4e908d685
   provenance: official-code-port
