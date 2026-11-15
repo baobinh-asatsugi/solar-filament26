@@ -19,9 +19,10 @@ fi
 "${PYTHON}" -m pip install -U openmim
 "${PYTHON}" -m mim install 'mmengine>=0.7.1,<1.0.0' 'mmcv>=2.0.0rc4,<2.2.0'
 "${PYTHON}" -m pip install numpy==1.26.4 pandas scipy pycocotools opencv-python-headless tqdm PyYAML
-# MMDetection's setup imports torch while determining build requirements.
-# Disable PEP 517 isolation so the build sees torch from finetune-sd.
-"${PYTHON}" -m pip install -e "${UPSTREAM}" --no-deps --no-build-isolation
+# MMDetection's setup imports torch while determining build requirements and
+# its pinned backend predates PEP 660 editable installs. Build a regular local
+# wheel without isolation so it sees torch from finetune-sd.
+"${PYTHON}" -m pip install "${UPSTREAM}" --no-deps --no-build-isolation
 "${PYTHON}" - <<'PY'
 import mmcv, mmengine, mmdet
 print("mmcv", mmcv.__version__, "mmengine", mmengine.__version__, "mmdet", mmdet.__version__)

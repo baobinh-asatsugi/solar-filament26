@@ -18,4 +18,5 @@ def test_mmdet_setup_uses_finetune_torch_without_build_isolation():
     setup = (root / "scripts/setup_official_baselines.sh").read_text()
     assert 'import torch' in setup
     assert '"finetune-sd" not in sys.executable' in setup
-    assert '--no-deps --no-build-isolation' in setup
+    assert 'pip install "${UPSTREAM}" --no-deps --no-build-isolation' in setup
+    assert 'pip install -e "${UPSTREAM}"' not in setup
