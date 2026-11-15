@@ -86,6 +86,7 @@ prediction caches, and results.
 Run exactly once and keep the resulting manifest:
 
 ```bash
+mkdir -p "$ARTIFACT_ROOT/logs"
 bash scripts/prepare_fixed_split.sh 2>&1 | tee "$ARTIFACT_ROOT/logs/prepare.log"
 ```
 

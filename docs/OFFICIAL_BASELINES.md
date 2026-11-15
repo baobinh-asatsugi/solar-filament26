@@ -50,6 +50,7 @@ optimizers, or schedules.
 Prepare the shared split and COCO files:
 
 ```bash
+mkdir -p "$ARTIFACT_ROOT/logs"
 bash scripts/prepare_fixed_split.sh
 bash scripts/prepare_baselines.sh
 ```

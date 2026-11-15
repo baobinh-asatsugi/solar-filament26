@@ -11,12 +11,10 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import yaml
-from sklearn.model_selection import GroupShuffleSplit, train_test_split
 from tqdm import tqdm
 
 from .config import add_path_args, discover_data, paths_from_args
 from .data.annotators import select_annotation_records
-from .data.splits import load_or_build_manifest
 from .experiment import record_event, sha256_file
 
 
@@ -47,8 +45,6 @@ def safe_stem(image_id: str) -> str:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Extract and convert MAGFiLO to YOLO segmentation format")
     add_path_args(parser)
-    parser.add_argument("--folds", type=int, default=5)
-    parser.add_argument("--val-fold", type=int, default=0)
     parser.add_argument("--seed", type=int, default=3020)
     parser.add_argument(
         "--annotation-strategy",
@@ -57,16 +53,8 @@ def main() -> None:
     )
     parser.add_argument("--use-categories", action="store_true", help="Train four chirality classes like the public 0.69 notebook")
     parser.add_argument("--dataset-name", default=None)
-    parser.add_argument("--rebuild-splits", action="store_true")
-    parser.add_argument("--input-manifest", type=str, default=None, help="Reuse an existing split manifest (needed for fine-tuning an old checkpoint)")
-    parser.add_argument("--fold-manifest", type=str, default=None)
+    parser.add_argument("--input-manifest", type=str, required=True, help="Frozen train/val/test manifest")
     parser.add_argument("--val-annotation-strategy", choices=("all", "same"), default="all")
-    parser.add_argument("--public-random-split", action="store_true", help="Exact physical-file train_test_split used by the public YOLO+U-Net notebook")
-    parser.add_argument(
-        "--legacy-group-shuffle-split",
-        action="store_true",
-        help="Reproduce the original winning-run GroupShuffleSplit over COCO image records.",
-    )
     parser.add_argument(
         "--export-manifest",
         type=Path,
@@ -87,41 +75,13 @@ def main() -> None:
     categories = sorted(coco.get("categories", []), key=lambda item: item["id"])
     category_to_index = {item["id"]: index for index, item in enumerate(categories)}
 
-    if args.input_manifest:
-        manifest_path = Path(args.input_manifest).expanduser().resolve()
-        manifest = pd.read_csv(manifest_path)
-        required = {"image_id", "file_name", "split"}
-        if not required.issubset(manifest.columns):
-            raise ValueError(f"Input manifest lacks {required - set(manifest.columns)}: {manifest_path}")
-        if "fold" not in manifest:
-            manifest["fold"] = np.where(manifest["split"] == "val", 0, 1)
-    else:
-        manifest_path = (
-            Path(args.fold_manifest).expanduser().resolve()
-            if args.fold_manifest
-            else paths.results_root / f"fold_manifest_s{args.seed}.csv"
-        )
-        manifest = load_or_build_manifest(
-            annotation_path, manifest_path, args.folds, args.seed, rebuild=args.rebuild_splits
-        )
-        if args.public_random_split and args.legacy_group_shuffle_split:
-            raise ValueError("Choose only one of --public-random-split and --legacy-group-shuffle-split")
-        if args.legacy_group_shuffle_split:
-            splitter = GroupShuffleSplit(n_splits=1, test_size=0.20, random_state=args.seed)
-            _, val_indices = next(splitter.split(images, groups=images["file_name"]))
-            val_files = set(images.iloc[val_indices]["file_name"])
-            manifest["split"] = np.where(manifest["file_name"].isin(val_files), "val", "train")
-            manifest["fold"] = np.where(manifest["split"] == "val", 0, 1)
-        elif args.public_random_split:
-            unique_files = list(dict.fromkeys(images["file_name"].tolist()))
-            train_files, val_files = train_test_split(unique_files, test_size=0.2, random_state=args.seed)
-            val_files = set(val_files)
-            manifest["split"] = np.where(manifest["file_name"].isin(val_files), "val", "train")
-            manifest["fold"] = np.where(manifest["split"] == "val", 0, 1)
-        else:
-            if not 0 <= args.val_fold < args.folds:
-                raise ValueError(f"--val-fold must be in [0, {args.folds - 1}]")
-            manifest["split"] = np.where(manifest["fold"] == args.val_fold, "val", "train")
+    manifest_path = Path(args.input_manifest).expanduser().resolve()
+    manifest = pd.read_csv(manifest_path)
+    required = {"image_id", "file_name", "split"}
+    if not required.issubset(manifest.columns):
+        raise ValueError(f"Input manifest lacks {required - set(manifest.columns)}: {manifest_path}")
+    if set(manifest["split"]) != {"train", "val", "test"}:
+        raise ValueError("Fixed manifest must contain exactly train, val, and test")
     if args.export_manifest is not None:
         export_path = args.export_manifest.expanduser().resolve()
         export_path.parent.mkdir(parents=True, exist_ok=True)
@@ -141,7 +101,7 @@ def main() -> None:
     if overlap:
         raise RuntimeError(f"Physical-image leakage detected: {len(overlap)} files")
 
-    dataset_name = args.dataset_name or f"fold{args.val_fold}_{args.annotation_strategy}_s{args.seed}"
+    dataset_name = args.dataset_name or f"fixed_{args.annotation_strategy}_s{args.seed}"
     dataset_root = paths.dataset_root(dataset_name)
 
     for split in ("train", "val"):
@@ -177,7 +137,6 @@ def main() -> None:
                 "sample_stem": stem,
                 "image_id": row.id,
                 "file_name": row.file_name,
-                "fold": int(selected.fold),
                 "split": selected.split,
                 "annotation_strategy": args.annotation_strategy,
             }
@@ -199,11 +158,9 @@ def main() -> None:
             "annotation_strategy": args.annotation_strategy,
             "val_annotation_strategy": args.val_annotation_strategy,
             "use_categories": args.use_categories,
-            "val_fold": args.val_fold,
-            "public_random_split": args.public_random_split,
             "seed": args.seed,
-            "fold_manifest": str(manifest_path),
-            "fold_manifest_sha256": sha256_file(manifest_path),
+            "split_manifest": str(manifest_path),
+            "split_manifest_sha256": sha256_file(manifest_path),
             "selected_manifest": str(selected_manifest_path),
             "selected_manifest_sha256": sha256_file(selected_manifest_path),
         },

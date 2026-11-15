@@ -5,6 +5,7 @@ ARTIFACT_ROOT="${ARTIFACT_ROOT:-${PROJECT_ROOT}/artifacts}"
 PYTHON="${PYTHON:-python}"
 export PYTHONPATH="${PROJECT_ROOT}/src"
 cd "${PROJECT_ROOT}"
+mkdir -p "${ARTIFACT_ROOT}/logs"
 
 "${PYTHON}" -m filament.create_fixed_annotated_split \
   --output-dir "${ARTIFACT_ROOT}/results/fixed_split" \

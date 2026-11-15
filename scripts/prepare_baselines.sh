@@ -5,6 +5,7 @@ ARTIFACT_ROOT="${ARTIFACT_ROOT:-${PROJECT_ROOT}/artifacts}"
 ZIP_PATH="${ZIP_PATH:-${PROJECT_ROOT}/filament-segmentation-2026.zip}"
 PYTHON="${PYTHON:-python}"
 export PYTHONPATH="${PROJECT_ROOT}/src:${PROJECT_ROOT}"
+mkdir -p "${ARTIFACT_ROOT}/logs"
 "${PYTHON}" "${PROJECT_ROOT}/baselines/export_coco_splits.py" \
   --manifest "${ARTIFACT_ROOT}/results/fixed_split/manifest.csv" \
   --artifact-root "${ARTIFACT_ROOT}" --zip-path "${ZIP_PATH}" \
