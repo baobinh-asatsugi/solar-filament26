@@ -9,5 +9,5 @@ MANIFEST="${PROJECT_ROOT}/splits/magfilo_v1/manifest.csv"
 COMMON=(--data-root "${DATA_ROOT}" --manifest "${MANIFEST}" --artifact-root "${ARTIFACT_ROOT}" --seed "${SEED}" --device "${GPU}")
 "${PYTHON}" "${PROJECT_ROOT}/baselines/maskrcnn_consensus.py" train "${COMMON[@]}"
 "${PYTHON}" "${PROJECT_ROOT}/baselines/maskrcnn_consensus.py" eval "${COMMON[@]}" --split val
-RESULT="${ARTIFACT_ROOT}/results/baseline_maskrcnn_consensus_s${SEED}"
+RESULT="${ARTIFACT_ROOT}/results/baseline_magfilo_v1_maskrcnn_consensus_s${SEED}"
 "${PYTHON}" "${PROJECT_ROOT}/baselines/maskrcnn_consensus.py" eval "${COMMON[@]}" --split test --frozen-config "${RESULT}/val_best.json"

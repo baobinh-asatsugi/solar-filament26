@@ -7,7 +7,7 @@ PYTHON="${PYTHON:-python}"
 DATA_ROOT="${DATA_ROOT:-${PROJECT_ROOT}/magfilo}"
 export PROJECT_ROOT ARTIFACT_ROOT DATA_ROOT PYTHON
 export PYTHONPATH="${PROJECT_ROOT}/src:${PROJECT_ROOT}"
-TAG="m2lite_s${SEED}"
+TAG="magfilo_v1_m2lite_s${SEED}"
 "${PYTHON}" -m filament.evaluate_lite \
   --manifest "${PROJECT_ROOT}/splits/magfilo_v1/manifest.csv" \
   --split test --confirm-final-test --prediction-run "${TAG}" \

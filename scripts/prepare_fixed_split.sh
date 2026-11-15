@@ -17,10 +17,10 @@ mkdir -p "${ARTIFACT_ROOT}/logs"
 "${PYTHON}" -m filament.prepare \
   --data-root "${DATA_ROOT}" \
   --input-manifest "${PROJECT_ROOT}/splits/magfilo_v1/manifest.csv" \
-  --dataset-name m2_lite_fixed \
+  --dataset-name m2_lite_magfilo_v1 \
   --annotation-strategy medoid \
   --val-annotation-strategy all \
   --seed 3020
 
 echo "Manifest: ${PROJECT_ROOT}/splits/magfilo_v1/manifest.csv"
-echo "YOLO data: ${ARTIFACT_ROOT}/datasets/m2_lite_fixed/dataset.yaml"
+echo "YOLO data: ${ARTIFACT_ROOT}/datasets/m2_lite_magfilo_v1/dataset.yaml"

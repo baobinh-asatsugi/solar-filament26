@@ -18,12 +18,12 @@ case "${MODEL}" in
   *) echo "Unknown model: ${MODEL}" >&2; exit 2;;
 esac
 IMAGE_ROOT="${DATA_ROOT}/images"
-WORK="${ARTIFACT_ROOT}/baseline_work/${MODEL}/seed${SEED}"; ANN="${ARTIFACT_ROOT}/baseline_data/annotations"
+WORK="${ARTIFACT_ROOT}/baseline_work/magfilo_v1/${MODEL}/seed${SEED}"; ANN="${ARTIFACT_ROOT}/baseline_data/annotations"
 "${PYTHON}" "${PROJECT_ROOT}/baselines/mmdet_adapter.py" --config "${UPSTREAM}/${CONFIG}" \
   --train-json "${ANN}/train.json" --val-json "${ANN}/val.json" --test-json "${ANN}/test.json" \
   --image-root "${IMAGE_ROOT}" --work-dir "${WORK}" --seed "${SEED}"
 CHECKPOINT="$(cat "${WORK}/last_checkpoint")"; [[ "${CHECKPOINT}" = /* ]] || CHECKPOINT="${WORK}/${CHECKPOINT}"
-OUT="${ARTIFACT_ROOT}/results/baseline_${MODEL}_s${SEED}"
+OUT="${ARTIFACT_ROOT}/results/baseline_magfilo_v1_${MODEL}_s${SEED}"
 "${PYTHON}" "${PROJECT_ROOT}/baselines/eval_mmdet_pq.py" --config "${WORK}/adapted_config.py" --checkpoint "${CHECKPOINT}" \
   --manifest "${PROJECT_ROOT}/splits/magfilo_v1/manifest.csv" --split val --data-root "${DATA_ROOT}" \
   --artifact-root "${ARTIFACT_ROOT}" --device cuda:0 --output-dir "${OUT}"

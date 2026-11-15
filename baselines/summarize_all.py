@@ -16,10 +16,10 @@ BASELINES = (
 
 def result_path(root: Path, method: str, seed: int) -> Path:
     if method == "m2_lite":
-        return root / f"m2lite_s{seed}_test.json"
+        return root / f"magfilo_v1_m2lite_s{seed}_test.json"
     if method == "yolov8l":
-        return root / f"yolov8l_s{seed}" / "test_best.json"
-    return root / f"baseline_{method}_s{seed}" / "test_best.json"
+        return root / f"magfilo_v1_yolov8l_s{seed}" / "test_best.json"
+    return root / f"baseline_magfilo_v1_{method}_s{seed}" / "test_best.json"
 
 
 def main() -> None:

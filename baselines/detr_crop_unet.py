@@ -157,8 +157,8 @@ def main() -> None:
     random.seed(args.seed); np.random.seed(args.seed); torch.manual_seed(args.seed); torch.cuda.manual_seed_all(args.seed)
     device = torch.device(f"cuda:{args.device}" if torch.cuda.is_available() and args.device != "cpu" else "cpu")
     coco, manifest, image_root = load_problem(args.data_root, args.manifest)
-    run_dir = args.artifact_root / "baseline_work" / "detr_crop_unet" / f"seed{args.seed}"
-    result_dir = args.artifact_root / "results" / f"baseline_detr_crop_unet_s{args.seed}"
+    run_dir = args.artifact_root / "baseline_work" / "magfilo_v1" / "detr_crop_unet" / f"seed{args.seed}"
+    result_dir = args.artifact_root / "results" / f"baseline_magfilo_v1_detr_crop_unet_s{args.seed}"
     run_dir.mkdir(parents=True, exist_ok=True); result_dir.mkdir(parents=True, exist_ok=True)
     checkpoint = run_dir / "crop_unet_best.pt"; refiner = PlainUNet().to(device)
     if args.command == "train-refiner":

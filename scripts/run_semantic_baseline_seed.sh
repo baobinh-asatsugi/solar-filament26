@@ -11,5 +11,5 @@ TRAIN_ARGS=()
 [[ "${MODEL}" == "edgeattnet" ]] && TRAIN_ARGS=(--epochs 50 --batch 1 --crop-size 512)
 "${PYTHON}" "${PROJECT_ROOT}/baselines/semantic_fullres.py" train "${COMMON[@]}" "${TRAIN_ARGS[@]}"
 "${PYTHON}" "${PROJECT_ROOT}/baselines/semantic_fullres.py" eval "${COMMON[@]}" --split val
-RESULT="${ARTIFACT_ROOT}/results/baseline_${MODEL}_s${SEED}"
+RESULT="${ARTIFACT_ROOT}/results/baseline_magfilo_v1_${MODEL}_s${SEED}"
 "${PYTHON}" "${PROJECT_ROOT}/baselines/semantic_fullres.py" eval "${COMMON[@]}" --split test --frozen-config "${RESULT}/val_best.json"

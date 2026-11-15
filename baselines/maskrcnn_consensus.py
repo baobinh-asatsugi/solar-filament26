@@ -176,9 +176,9 @@ def main() -> None:
     random.seed(args.seed); np.random.seed(args.seed); torch.manual_seed(args.seed); torch.cuda.manual_seed_all(args.seed)
     device = torch.device(f"cuda:{args.device}" if torch.cuda.is_available() and args.device != "cpu" else "cpu")
     coco, manifest, _ = load_problem(args.data_root, args.manifest)
-    cache_root = args.artifact_root / "baseline_cache" / "consensus_instances"
-    run_dir = args.artifact_root / "baseline_work" / "maskrcnn_consensus" / f"seed{args.seed}"
-    result_dir = args.artifact_root / "results" / f"baseline_maskrcnn_consensus_s{args.seed}"
+    cache_root = args.artifact_root / "baseline_cache" / "magfilo_v1" / "consensus_instances"
+    run_dir = args.artifact_root / "baseline_work" / "magfilo_v1" / "maskrcnn_consensus" / f"seed{args.seed}"
+    result_dir = args.artifact_root / "results" / f"baseline_magfilo_v1_maskrcnn_consensus_s{args.seed}"
     run_dir.mkdir(parents=True, exist_ok=True); result_dir.mkdir(parents=True, exist_ok=True)
     checkpoint = run_dir / "best.pt"
     model = build_model(pretrained=args.command == "train").to(device)

@@ -18,7 +18,7 @@ def main() -> None:
     parser.add_argument("--device", default="0")
     parser.add_argument("--epochs", type=int, default=30)
     args = parser.parse_args()
-    run_name = f"detr_crop_unet_detector_s{args.seed}"
+    run_name = f"magfilo_v1_detr_crop_unet_detector_s{args.seed}"
     model = RTDETR("rtdetr-l.pt")
     model.train(
         data=str(args.data.resolve()), project=str((args.artifact_root / "runs").resolve()), name=run_name,

@@ -13,4 +13,4 @@ mkdir -p "${ARTIFACT_ROOT}/logs"
 "${PYTHON}" "${PROJECT_ROOT}/baselines/export_yolo_detection.py" \
   --data-root "${DATA_ROOT}" \
   --manifest "${PROJECT_ROOT}/splits/magfilo_v1/manifest.csv" \
-  --output-dir "${ARTIFACT_ROOT}/baseline_data/yolo_detection"
+  --output-dir "${ARTIFACT_ROOT}/baseline_data/magfilo_v1_yolo_detection"
