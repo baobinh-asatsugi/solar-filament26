@@ -9,6 +9,7 @@ shift 2
 MAX_JOBS_PER_GPU="${MAX_JOBS_PER_GPU:-2}"
 GPU_POLL_SECONDS="${GPU_POLL_SECONDS:-15}"
 GPU_START_TIMEOUT="${GPU_START_TIMEOUT:-120}"
+GPU_IGNORED_PROCESS_REGEX="${GPU_IGNORED_PROCESS_REGEX:-soffice\\.bin$}"
 ARTIFACT_ROOT="${ARTIFACT_ROOT:-$(pwd)/artifacts}"
 SCHEDULER_ROOT="${ARTIFACT_ROOT}/gpu_scheduler"
 LOCK_FILE="${SCHEDULER_ROOT}/gpu${GPU}.lock"
@@ -18,8 +19,26 @@ command -v nvidia-smi >/dev/null || { echo "ERROR: nvidia-smi not found" >&2; ex
 command -v flock >/dev/null || { echo "ERROR: flock not found" >&2; exit 127; }
 
 active_jobs() {
-  nvidia-smi -i "${GPU}" --query-compute-apps=pid --format=csv,noheader,nounits 2>/dev/null \
-    | grep -Ec '^[[:space:]]*[0-9]+' || true
+  local processes
+  if ! processes="$(
+    nvidia-smi -i "${GPU}" \
+      --query-compute-apps=pid,process_name \
+      --format=csv,noheader,nounits 2>/dev/null
+  )"; then
+    # Fail closed: a transient nvidia-smi error must not oversubscribe the GPU.
+    echo "${MAX_JOBS_PER_GPU}"
+    return
+  fi
+  awk -F',' -v ignored="${GPU_IGNORED_PROCESS_REGEX}" '
+    {
+      pid = $1
+      name = tolower($2)
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", pid)
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", name)
+      if (pid ~ /^[0-9]+$/ && name !~ ignored) active++
+    }
+    END { print active + 0 }
+  ' <<<"${processes}"
 }
 
 run_logged() {

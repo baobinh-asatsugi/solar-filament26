@@ -53,3 +53,11 @@ def test_training_sources_follow_best_only_policy():
     assert "save_optimizer = False" in mmdet
     assert '${WORK}/best_checkpoint' in launcher
     assert '${WORK}/last_checkpoint' not in launcher
+
+
+def test_gpu_gate_excludes_libreoffice_but_fails_closed():
+    root = Path(__file__).resolve().parents[1]
+    gate = (root / "scripts/run_with_gpu_limit.sh").read_text()
+    assert 'GPU_IGNORED_PROCESS_REGEX="${GPU_IGNORED_PROCESS_REGEX:-soffice\\\\.bin$}"' in gate
+    assert "--query-compute-apps=pid,process_name" in gate
+    assert 'echo "${MAX_JOBS_PER_GPU}"' in gate
