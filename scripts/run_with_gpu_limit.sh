@@ -6,7 +6,13 @@ LOG_FILE="${2:?log file}"
 shift 2
 (( $# > 0 )) || { echo "ERROR: missing command" >&2; exit 2; }
 
-MAX_JOBS_PER_GPU="${MAX_JOBS_PER_GPU:-2}"
+if [[ -n "${MAX_JOBS_PER_GPU:-}" ]]; then
+  : # Explicit global override supplied by the caller.
+elif [[ "${GPU}" == "0" ]]; then
+  MAX_JOBS_PER_GPU="${GPU0_MAX_JOBS:-2}"
+else
+  MAX_JOBS_PER_GPU="${GPU123_MAX_JOBS:-3}"
+fi
 GPU_POLL_SECONDS="${GPU_POLL_SECONDS:-15}"
 GPU_START_TIMEOUT="${GPU_START_TIMEOUT:-120}"
 GPU_IGNORED_PROCESS_REGEX="${GPU_IGNORED_PROCESS_REGEX:-soffice\\.bin$}"
