@@ -145,15 +145,16 @@ bash scripts/launch_unetpp_watershed_five_seeds.sh
 bash scripts/launch_domain_baselines.sh
 ```
 
-The eight MMDetection methods need their isolated environment:
+Install and run the eight MMDetection methods in the same `finetune-sd`
+environment used by the other experiments:
 
 ```bash
-conda create -n mmdet-baselines python=3.11 -y
-conda activate mmdet-baselines
-# Install a compatible CUDA PyTorch build first.
-export PYTHON=/path/to/mmdet-baselines/bin/python
+conda activate finetune-sd
+export BASELINE_CONDA_ENV=finetune-sd
+export PYTHON=/path/to/finetune-sd/bin/python
 bash scripts/setup_official_baselines.sh
-bash scripts/launch_official_baselines.sh
+bash scripts/launch_official_baselines_group1.sh  # Mask/Cascade/HTC/SOLOv2
+bash scripts/launch_official_baselines_group2.sh  # CondInst/QueryInst/Mask2Former/RTMDet-Ins
 ```
 
 The setup script checks out pinned MMDetection v3.3.0 under the ignored
