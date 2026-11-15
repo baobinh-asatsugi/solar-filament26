@@ -20,3 +20,4 @@ def test_mmdet_setup_uses_finetune_torch_without_build_isolation():
     assert '"finetune-sd" not in sys.executable' in setup
     assert 'pip install "${UPSTREAM}" --no-deps --no-build-isolation' in setup
     assert 'pip install -e "${UPSTREAM}"' not in setup
+    assert 'shapely terminaltables' in setup
