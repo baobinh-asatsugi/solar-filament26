@@ -21,3 +21,10 @@ def test_mmdet_setup_uses_finetune_torch_without_build_isolation():
     assert 'pip install "${UPSTREAM}" --no-deps --no-build-isolation' in setup
     assert 'pip install -e "${UPSTREAM}"' not in setup
     assert 'shapely terminaltables' in setup
+
+
+def test_mmdet_keeps_seed_without_forcing_unsupported_deterministic_kernels():
+    root = Path(__file__).resolve().parents[1]
+    adapter = (root / "baselines/mmdet_adapter.py").read_text()
+    assert "dict(seed=args.seed, deterministic=False)" in adapter
+    assert "dict(seed=args.seed, deterministic=True)" not in adapter

@@ -121,7 +121,11 @@ def main() -> None:
             evaluator["ann_file"] = str(annotation.resolve())
             evaluator["metric"] = ["bbox", "segm"]
     cfg.work_dir = str(args.work_dir.resolve())
-    cfg.randomness = dict(seed=args.seed, deterministic=True)
+    # Several official instance heads (notably CondInst) use CUDA replication
+    # padding whose backward pass has no deterministic implementation in the
+    # pinned Torch 2.0 build. Keep the controlled seed, but do not request
+    # strict deterministic kernels that would abort training.
+    cfg.randomness = dict(seed=args.seed, deterministic=False)
     cfg.resume = args.resume
     checkpoint_hook = cfg.default_hooks.checkpoint
     # Disable periodic epoch snapshots. Validation still triggers save_best.
