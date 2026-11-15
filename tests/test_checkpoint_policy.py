@@ -61,7 +61,7 @@ def test_gpu_gate_excludes_libreoffice_but_fails_closed():
     assert 'GPU_IGNORED_PROCESS_REGEX="${GPU_IGNORED_PROCESS_REGEX:-soffice\\\\.bin$}"' in gate
     assert "--query-compute-apps=pid,process_name,used_gpu_memory" in gate
     assert 'GPU_MIN_ACTIVE_MEMORY_MIB="${GPU_MIN_ACTIVE_MEMORY_MIB:-1024}"' in gate
-    assert 'MAX_JOBS_PER_GPU="${GPU0_MAX_JOBS:-2}"' in gate
+    assert 'MAX_JOBS_PER_GPU="${GPU0_MAX_JOBS:-3}"' in gate
     assert 'MAX_JOBS_PER_GPU="${GPU123_MAX_JOBS:-3}"' in gate
     assert 'echo "${MAX_JOBS_PER_GPU}"' in gate
 

@@ -9,7 +9,7 @@ shift 2
 if [[ -n "${MAX_JOBS_PER_GPU:-}" ]]; then
   : # Explicit global override supplied by the caller.
 elif [[ "${GPU}" == "0" ]]; then
-  MAX_JOBS_PER_GPU="${GPU0_MAX_JOBS:-2}"
+  MAX_JOBS_PER_GPU="${GPU0_MAX_JOBS:-3}"
 else
   MAX_JOBS_PER_GPU="${GPU123_MAX_JOBS:-3}"
 fi
