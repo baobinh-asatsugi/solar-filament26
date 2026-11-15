@@ -5,9 +5,8 @@ PROJECT_ROOT="${PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 ARTIFACT_ROOT="${ARTIFACT_ROOT:-${PROJECT_ROOT}/artifacts}"
 
 cd "${PROJECT_ROOT}"
-if [[ "${CONDA_DEFAULT_ENV:-}" != "finetune-sd" ]]; then
-  echo "ERROR: activate the existing Conda environment first:" >&2
-  echo "  conda activate finetune-sd" >&2
+if [[ -z "${CONDA_DEFAULT_ENV:-}" || "${CONDA_DEFAULT_ENV}" == "base" ]]; then
+  echo "ERROR: activate the project Conda environment first." >&2
   exit 1
 fi
 
@@ -37,4 +36,4 @@ else:
     raise SystemExit("ERROR: PyTorch cannot initialize CUDA in finetune-sd")
 PY
 
-echo "Server environment is ready."
+echo "Server environment is ready. Set DATA_ROOT and run scripts/prepare_fixed_split.sh."

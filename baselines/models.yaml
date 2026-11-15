@@ -1,3 +1,8 @@
+yolov8l:
+  config: yolov8l-seg-2048
+  paper: https://arxiv.org/abs/2305.09972
+  github: https://github.com/ultralytics/ultralytics
+  provenance: released-package
 mask_rcnn:
   config: mask-rcnn_r50_fpn_1x_coco
   paper: https://openaccess.thecvf.com/content_ICCV_2017/papers/He_Mask_R-CNN_ICCV_2017_paper.pdf
@@ -34,3 +39,27 @@ unetpp_watershed:
   config: original-five-level-deep-supervision-plus-watershed
   paper: https://pmc.ncbi.nlm.nih.gov/articles/PMC7329239/
   github: https://github.com/MrGiovanni/UNetPlusPlus
+fullres_unet:
+  config: resnet34-unet-full-resolution-2048
+  paper: https://www.kaggle.com/competitions/filament-segmentation-2026
+  github: https://github.com/rodchemist/solar-filament-segmentation-2026
+  commit: 39afbb157a4711a52f142991e503ede4e908d685
+  provenance: official-code-port
+edgeattnet:
+  config: edge-guided-attention-unet-2048
+  paper: https://github.com/dasjar/EdgeAttNet
+  github: https://github.com/dasjar/EdgeAttNet
+  commit: 991215f3734428519fd4178456d9feff1dd7b0a3
+  provenance: paper-faithful-reconstruction-upstream-model-file-is-placeholder
+detr_crop_unet:
+  config: rtdetr-l-2048-to-crop-unet
+  paper: https://github.com/GuillemCastello/SolFilOsc
+  github: https://github.com/GuillemCastello/SolFilOsc
+  commit: 2207ddb5441ea987f41b1743e1c89ae1ddc8d412
+  provenance: paper-faithful-reconstruction-authors-did-not-release-model-code
+maskrcnn_consensus:
+  config: maskrcnn-r50-fpn-v2-2048-consensus-alignment
+  paper: https://github.com/gitfirsthub/magfilo-filament-segmentation
+  github: https://github.com/gitfirsthub/magfilo-filament-segmentation
+  commit: e48ef86f9fd6ca5dd7c6a888d989b1853f90c13a
+  provenance: official-code-port

@@ -30,13 +30,13 @@ def main() -> None:
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--split", choices=("val", "test"), required=True)
-    parser.add_argument("--zip-path", type=Path, required=True)
+    parser.add_argument("--data-root", type=Path, required=True)
     parser.add_argument("--artifact-root", type=Path, required=True)
     parser.add_argument("--device", default="cuda:0")
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--frozen-config", type=Path, default=None)
     args = parser.parse_args()
-    annotation_path, image_root, _ = discover_data(Paths(args.zip_path.resolve(), args.artifact_root.resolve()))
+    annotation_path, image_root, _ = discover_data(Paths(args.data_root.resolve(), args.artifact_root.resolve()))
     manifest = pd.read_csv(args.manifest)
     records = manifest[manifest["split"] == args.split]
     with annotation_path.open() as handle:

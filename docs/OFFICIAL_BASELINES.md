@@ -1,124 +1,111 @@
-# Five-seed comparison protocol
+# Fourteen-baseline protocol
 
-All methods use the same immutable grouped `train/val/test` manifest. Neural
-training seeds are 3020–3024. Decoder thresholds are selected on validation
-and then frozen for annotated test. The final table reports test mean ± sample
-standard deviation across the five seeds.
+All baselines use the committed grouped MAGFiLO split, source resolution
+2048×2048, seeds 3020–3024, validation-only checkpoint/decoder selection, and
+the shared pooled-PQ implementation. Test is never used for tuning.
 
-## Compared systems
+## Methods and provenance
 
-1. **M2-Lite (ours)** — YOLOv8l proposal branch, U-Net++ semantic branch,
-   semantic-assisted SIRA, and the minimal 17-feature quality decoder.
-2. **Plain YOLOv8l-seg** — the detector alone, trained at 2048 px.
-3. **Mask R-CNN** — two-stage RoI instance segmentation
-   ([paper](https://openaccess.thecvf.com/content_ICCV_2017/papers/He_Mask_R-CNN_ICCV_2017_paper.pdf),
-   [code](https://github.com/open-mmlab/mmdetection)).
-4. **Cascade Mask R-CNN** — cascaded box/mask refinement
-   ([paper](https://arxiv.org/abs/1712.00726),
-   [code](https://github.com/open-mmlab/mmdetection)).
-5. **Hybrid Task Cascade (HTC)** — interleaved detection and segmentation
-   stages with semantic context ([paper](https://arxiv.org/abs/1901.07518),
-   [code](https://github.com/open-mmlab/mmdetection)).
-6. **SOLOv2** — box-free, location-based dynamic mask kernels
-   ([paper](https://papers.neurips.cc/paper/2020/file/cd3afef9b8b89558cd56638c3631868a-Paper.pdf),
-   [official repo](https://github.com/WXinlong/SOLO)).
-7. **CondInst** — conditional convolution instance masks without RoIAlign
-   ([paper](https://arxiv.org/abs/2003.05664),
-   [official repo](https://github.com/aim-uofa/AdelaiDet)).
-8. **QueryInst** — query-driven parallel box/mask supervision
-   ([paper](https://openaccess.thecvf.com/content/ICCV2021/papers/Fang_Instances_As_Queries_ICCV_2021_paper.pdf),
-   [official repo](https://github.com/hustvl/QueryInst)).
-9. **Mask2Former** — masked-attention universal segmentation
-   ([paper](https://openaccess.thecvf.com/content/CVPR2022/papers/Cheng_Masked-Attention_Mask_Transformer_for_Universal_Image_Segmentation_CVPR_2022_paper.pdf),
-   [official repo](https://github.com/facebookresearch/Mask2Former)).
-10. **RTMDet-Ins-L** — real-time CSPNeXt instance segmentation
-    ([paper](https://arxiv.org/abs/2212.07784),
-    [code](https://github.com/open-mmlab/mmdetection)).
-11. **UNet++ + watershed** — domain-specific nested medical semantic
-    segmentation followed by validation-tuned instance separation
-    ([paper](https://pmc.ncbi.nlm.nih.gov/articles/PMC7329239/),
-    [official repo](https://github.com/MrGiovanni/UNetPlusPlus)).
+| key | method | implementation source |
+|---|---|---|
+| `yolov8l` | YOLOv8l-seg | Ultralytics release |
+| `unetpp_watershed` | original five-level U-Net++ + watershed | official U-Net++ architecture; local instance adapter |
+| `mask_rcnn` | Mask R-CNN R50-FPN | MMDetection v3.3.0 config |
+| `cascade_mask_rcnn` | Cascade Mask R-CNN R50-FPN | MMDetection v3.3.0 config |
+| `htc` | Hybrid Task Cascade R50-FPN | MMDetection v3.3.0 config |
+| `solov2` | SOLOv2 R50-FPN | MMDetection v3.3.0 config |
+| `condinst` | CondInst R50-FPN | MMDetection v3.3.0 config |
+| `queryinst` | QueryInst R50-FPN | MMDetection v3.3.0 config |
+| `mask2former` | Mask2Former R50 | MMDetection v3.3.0 config |
+| `rtmdet_ins` | RTMDet-Ins-L | MMDetection v3.3.0 config |
+| `fullres_unet` | full-resolution ResNet34 U-Net | port of `rodchemist/solar-filament-segmentation-2026` |
+| `edgeattnet` | edge-guided attention U-Net | paper-faithful reconstruction |
+| `detr_crop_unet` | RT-DETR → filament crop → U-Net | paper-faithful reconstruction of the published framework |
+| `maskrcnn_consensus` | Mask R-CNN consensus/alignment | port of `gitfirsthub/magfilo-filament-segmentation` |
 
-The eight non-YOLO baselines run their MMDetection v3.3.0 official model-zoo
-configs. The adapter changes only dataset path, class count (80→1), seed,
-work directory, and automatic learning-rate scaling for the actual GPU count.
-It does not replace backbones, heads, losses, augmentation pipelines,
-optimizers, or schedules.
+The eight MMDetection adapters alter only paths, one-class dimensions, random
+seed, working directory, and 2048 input transforms. Their backbones, heads,
+losses, optimizer, and schedules stay in the named upstream configs.
 
-## Commands
+The DETR–crop U-Net authors released the SWEFil data companion repository but
+not their model implementation. EdgeAttNet's public `edgeattnet_model.py` is a
+self-importing placeholder and omits the advertised model class. Therefore
+those two baselines are explicitly labelled reconstructions, not official code
+ports. Full-resolution U-Net and Mask R-CNN consensus/alignment are direct
+ports of publicly released implementations.
 
-Prepare the shared split and COCO files:
+## Prepare
 
 ```bash
+export PROJECT_ROOT=/path/to/solar-filament26
+export DATA_ROOT=/private/path/MAGFiLO
+export ARTIFACT_ROOT=/private/path/artifacts
+export PYTHON=/path/to/environment/bin/python
+export PYTHONPATH="$PROJECT_ROOT/src:$PROJECT_ROOT"
+cd "$PROJECT_ROOT"
 mkdir -p "$ARTIFACT_ROOT/logs"
+
 bash scripts/prepare_fixed_split.sh
 bash scripts/prepare_baselines.sh
 ```
 
-Ours (four GPUs, seed 3024 follows seed 3020 on GPU 0):
+## Direct one-seed commands
 
 ```bash
-bash scripts/launch_five_seeds_tmux.sh
-# after validation is accepted/frozen:
-for seed in 3020 3021 3022 3023 3024; do
-  bash scripts/evaluate_final_test.sh "$seed"
-done
+# YOLOv8l
+bash scripts/run_yolov8_seed.sh 3020 0
+
+# U-Net++ + watershed
+bash scripts/run_unetpp_watershed_seed.sh 3020 0
+
+# Any MMDetection key listed above
+bash scripts/run_mmdet_seed.sh mask_rcnn 3020 0
+
+# Full-resolution U-Net or EdgeAttNet
+bash scripts/run_semantic_baseline_seed.sh fullres_unet 3020 0
+bash scripts/run_semantic_baseline_seed.sh edgeattnet 3020 0
+
+# DETR → crop U-Net
+bash scripts/run_detr_crop_unet_seed.sh 3020 0
+
+# Consensus/alignment Mask R-CNN
+bash scripts/run_maskrcnn_consensus_seed.sh 3020 0
 ```
 
-Plain YOLOv8l-seg:
+Each runner performs train → validation tuning → test with the frozen
+validation configuration. For formal experiments, launch all five seeds and
+do not inspect test until every design choice is frozen.
+
+## Five-seed launchers
 
 ```bash
 bash scripts/launch_yolov8_five_seeds.sh
-```
-
-Domain-specific U-Net++ + watershed:
-
-```bash
-conda activate finetune-sd
 bash scripts/launch_unetpp_watershed_five_seeds.sh
+bash scripts/launch_domain_baselines.sh
 ```
 
-Official baselines should use a separate environment because MMDetection pins
-MMCV independently from Ultralytics:
+MMDetection has binary dependency constraints and uses a separate environment:
 
 ```bash
 conda create -n mmdet-baselines python=3.11 -y
 conda activate mmdet-baselines
-# install a CUDA PyTorch build compatible with the server first
+# Install the CUDA PyTorch build appropriate for the machine first.
 export PYTHON=/path/to/mmdet-baselines/bin/python
 bash scripts/setup_official_baselines.sh
-bash scripts/prepare_baselines.sh
 bash scripts/launch_official_baselines.sh
 ```
 
-The setup command includes a CPU smoke test that loads the eight official
-configs, applies only the one-class adaptation, and constructs every model.
-Do not launch the 40 training runs unless all eight lines print `OK`.
+`setup_official_baselines.sh` pins MMDetection v3.3.0 and performs a config/model
+construction smoke test. Do not launch the 40 runs unless all eight configs
+print `OK`.
 
-One baseline/seed can be debugged directly:
-
-```bash
-bash scripts/run_mmdet_seed.sh mask_rcnn 3020 0
-```
-
-Summarize every completed run:
+## Summary
 
 ```bash
-conda activate finetune-sd
 bash scripts/summarize_five_seed_results.sh
 ```
 
-Outputs:
-
-```text
-$ARTIFACT_ROOT/results/five_seed_runs.csv
-$ARTIFACT_ROOT/results/five_seed_summary.csv
-```
-
-## Upstream source handling
-
-Official repositories were cloned temporarily during adapter development for
-config/path verification. They are not part of Git (`external/` is ignored).
-At runtime, `setup_official_baselines.sh` checks out the pinned MMDetection
-v3.3.0 source into `$ARTIFACT_ROOT/upstream`, keeping third-party code and
-weights outside this repository.
+The expected experiment contains 75 final results: M2-Lite plus 14 baselines,
+five seeds each. Missing method/seed pairs are printed explicitly. Report
+pooled PQ mean ± sample standard deviation; SQ/RQ and TP/FP/FN diagnose shape
+quality versus recognition errors.

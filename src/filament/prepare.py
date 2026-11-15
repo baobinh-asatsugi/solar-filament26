@@ -4,7 +4,6 @@ import argparse
 import json
 import os
 import shutil
-import zipfile
 from collections import defaultdict
 from pathlib import Path
 
@@ -16,17 +15,6 @@ from tqdm import tqdm
 from .config import add_path_args, discover_data, paths_from_args
 from .data.annotators import select_annotation_records
 from .experiment import record_event, sha256_file
-
-
-def extract_once(zip_path, extract_root) -> None:
-    sentinel = extract_root / ".complete"
-    if sentinel.exists():
-        return
-    if not zip_path.is_file():
-        raise FileNotFoundError(zip_path)
-    with zipfile.ZipFile(zip_path) as archive:
-        archive.extractall(extract_root)
-    sentinel.write_text("ok\n")
 
 
 def materialize(src, dst) -> None:
@@ -43,7 +31,7 @@ def safe_stem(image_id: str) -> str:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Extract and convert MAGFiLO to YOLO segmentation format")
+    parser = argparse.ArgumentParser(description="Convert full MAGFiLO v1.0 to YOLO segmentation format")
     add_path_args(parser)
     parser.add_argument("--seed", type=int, default=3020)
     parser.add_argument(
@@ -63,8 +51,7 @@ def main() -> None:
     )
     args = parser.parse_args()
     paths = paths_from_args(args)
-    extract_once(paths.zip_path, paths.extract_root)
-    annotation_path, train_image_dir, test_image_dir = discover_data(paths)
+    annotation_path, train_image_dir, _ = discover_data(paths)
 
     with annotation_path.open() as handle:
         coco = json.load(handle)
@@ -166,7 +153,7 @@ def main() -> None:
         },
     )
     print(selected_manifest.groupby("split").agg(records=("image_id", "size"), physical_images=("file_name", "nunique")))
-    print(f"Test images: {len(list(test_image_dir.glob('*.jpeg')))}")
+    print(f"Source images: {len(list(train_image_dir.glob('*.jpeg')))}")
     print(f"Dataset YAML: {data_yaml}")
 
 

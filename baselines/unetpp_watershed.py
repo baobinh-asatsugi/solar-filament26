@@ -107,7 +107,7 @@ def instances_from_probability(probability, threshold, min_distance, min_area):
 
 def train(args):
     random.seed(args.seed); np.random.seed(args.seed); torch.manual_seed(args.seed); torch.cuda.manual_seed_all(args.seed)
-    annotation, image_root, _ = discover_data(Paths(args.zip_path.resolve(), args.artifact_root.resolve()))
+    annotation, image_root, _ = discover_data(Paths(args.data_root.resolve(), args.artifact_root.resolve()))
     common = dict(annotation_path=annotation, image_dir=image_root, manifest_path=args.manifest.resolve(), tile_size=512,
                   feature_mode="intensity", positive_fraction=.75, seed=args.seed)
     training = SemanticTileDataset(split="train", samples=6000, annotation_strategy="medoid", training=True, **common)
@@ -139,7 +139,7 @@ def train(args):
 
 
 def evaluate(args):
-    annotation_path, image_root, _ = discover_data(Paths(args.zip_path.resolve(), args.artifact_root.resolve()))
+    annotation_path, image_root, _ = discover_data(Paths(args.data_root.resolve(), args.artifact_root.resolve()))
     manifest = pd.read_csv(args.manifest); records = manifest[manifest.split == args.split]
     with annotation_path.open() as handle: coco = json.load(handle)
     images = {str(x["id"]): x for x in coco["images"]}; annotations = defaultdict(list)
@@ -179,7 +179,7 @@ def evaluate(args):
 
 def main():
     parser = argparse.ArgumentParser(); parser.add_argument("command", choices=("train", "eval")); parser.add_argument("--manifest", type=Path, required=True)
-    parser.add_argument("--zip-path", type=Path, required=True); parser.add_argument("--artifact-root", type=Path, required=True)
+    parser.add_argument("--data-root", type=Path, required=True); parser.add_argument("--artifact-root", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True); parser.add_argument("--seed", type=int, required=True)
     parser.add_argument("--split", choices=("val", "test"), default="val"); parser.add_argument("--device", default="0")
     parser.add_argument("--batch", type=int, default=2); parser.add_argument("--workers", type=int, default=6)

@@ -15,10 +15,10 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Export the frozen split as one-class COCO JSON")
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--artifact-root", type=Path, required=True)
-    parser.add_argument("--zip-path", type=Path, required=True)
+    parser.add_argument("--data-root", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     args = parser.parse_args()
-    annotation_path, _, _ = discover_data(Paths(args.zip_path.resolve(), args.artifact_root.resolve()))
+    annotation_path, _, _ = discover_data(Paths(args.data_root.resolve(), args.artifact_root.resolve()))
     with annotation_path.open() as handle:
         coco = json.load(handle)
     manifest = pd.read_csv(args.manifest)

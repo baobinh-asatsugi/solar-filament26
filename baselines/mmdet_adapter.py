@@ -36,7 +36,10 @@ def _allowed(path: str) -> bool:
     dataset = path.startswith(("train_dataloader.dataset", "val_dataloader.dataset", "test_dataloader.dataset"))
     evaluator = path.startswith(("val_evaluator.", "test_evaluator.")) and path.rsplit(".", 1)[-1] in {"ann_file", "metric"}
     runtime = path in {"work_dir", "resume", "randomness", "auto_scale_lr.enable"}
-    return model_class or dataset or evaluator or runtime
+    shared_input = path.startswith(("train_dataloader.dataset", "val_dataloader.dataset", "test_dataloader.dataset")) and any(
+        token in path for token in (".scale", ".scales", ".img_scale", ".size")
+    )
+    return model_class or dataset or evaluator or runtime or shared_input
 
 
 def _set_num_classes(value) -> None:
@@ -68,6 +71,23 @@ def _set_dataset(value, *, ann_file: str, image_root: str) -> None:
             value["filter_cfg"] = {"filter_empty_gt": False, "min_size": 1}
 
 
+def _set_input_size(value, input_size: int) -> None:
+    if isinstance(value, dict):
+        transform_type = str(value.get("type", ""))
+        if "Resize" in transform_type:
+            if "scale" in value:
+                value["scale"] = (input_size, input_size)
+            if "scales" in value:
+                value["scales"] = [(input_size, input_size)]
+        if transform_type in {"BatchFixedSizePad", "FixedSizeCrop"} and "size" in value:
+            value["size"] = (input_size, input_size)
+        for child in value.values():
+            _set_input_size(child, input_size)
+    elif isinstance(value, (list, tuple)):
+        for child in value:
+            _set_input_size(child, input_size)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Dataset-only adapter for official MMDetection configs")
     parser.add_argument("--config", type=Path, required=True)
@@ -78,6 +98,7 @@ def main() -> None:
     parser.add_argument("--work-dir", type=Path, required=True)
     parser.add_argument("--seed", type=int, required=True)
     parser.add_argument("--resume", action="store_true")
+    parser.add_argument("--input-size", type=int, default=2048)
     args = parser.parse_args()
     register_all_modules()
     cfg = Config.fromfile(args.config.resolve())
@@ -86,6 +107,9 @@ def main() -> None:
     _set_dataset(cfg.train_dataloader.dataset, ann_file=str(args.train_json.resolve()), image_root=str(args.image_root.resolve()))
     _set_dataset(cfg.val_dataloader.dataset, ann_file=str(args.val_json.resolve()), image_root=str(args.image_root.resolve()))
     _set_dataset(cfg.test_dataloader.dataset, ann_file=str(args.test_json.resolve()), image_root=str(args.image_root.resolve()))
+    _set_input_size(cfg.train_dataloader.dataset, args.input_size)
+    _set_input_size(cfg.val_dataloader.dataset, args.input_size)
+    _set_input_size(cfg.test_dataloader.dataset, args.input_size)
     for evaluator, annotation in ((cfg.val_evaluator, args.val_json), (cfg.test_evaluator, args.test_json)):
         if isinstance(evaluator, dict):
             evaluator["ann_file"] = str(annotation.resolve())
@@ -102,7 +126,8 @@ def main() -> None:
         raise RuntimeError(f"Adapter changed forbidden config fields: {unexpected}")
     (args.work_dir / "adaptation_audit.json").write_text(json.dumps({
         "upstream_config": str(args.config.resolve()), "changed_paths": changed,
-        "invariant": "Only dataset/evaluator paths, one-class dimensions, seed/runtime, and auto LR scaling may change.",
+        "shared_input_size": args.input_size,
+        "invariant": "Only dataset/evaluator paths, one-class dimensions, the shared 2048 input size, seed/runtime, and auto LR scaling may change.",
     }, indent=2) + "\n")
     cfg.dump(args.work_dir / "adapted_config.py")
     Runner.from_cfg(cfg).train()

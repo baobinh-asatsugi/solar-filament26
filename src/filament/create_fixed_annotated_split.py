@@ -15,7 +15,7 @@ def main() -> None:
     parser.add_argument("--val-fraction", type=float, default=0.15)
     parser.add_argument("--test-fraction", type=float, default=0.20)
     parser.add_argument("--seed", type=int, default=3020)
-    parser.add_argument("--physical-images", type=int, default=707)
+    parser.add_argument("--physical-images", type=int, default=958)
     args = parser.parse_args()
     paths = paths_from_args(args)
     annotation, _, _ = discover_data(paths)

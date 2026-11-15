@@ -1,27 +1,20 @@
-# Official instance-segmentation baselines
+# Baseline adapters
 
-All eight baselines are loaded from unmodified official MMDetection model-zoo
-configs. The adapter changes only: dataset paths, one-class output dimensions,
-random seed, work directory, and checkpoint initialization. Backbone, neck,
-head, losses, optimizer, augmentation, and training schedule remain those of
-the named upstream config.
+This directory contains the dataset/evaluation adapters for 14 baselines. The
+shared invariants are:
 
-| key | paper/model | official config |
-|---|---|---|
-| `mask_rcnn` | Mask R-CNN | `mask-rcnn_r50_fpn_1x_coco` |
-| `cascade_mask_rcnn` | Cascade Mask R-CNN | `cascade-mask-rcnn_r50_fpn_1x_coco` |
-| `htc` | Hybrid Task Cascade | `htc_r50_fpn_1x_coco` |
-| `solov2` | SOLOv2 | `solov2_r50_fpn_1x_coco` |
-| `condinst` | CondInst | `condinst_r50_fpn_ms-poly-90k_coco_instance` |
-| `queryinst` | QueryInst | `queryinst_r50_fpn_1x_coco` |
-| `mask2former` | Mask2Former | `mask2former_r50_8xb2-lsj-50e_coco` |
-| `rtmdet_ins` | RTMDet-Ins | `rtmdet-ins_l_8xb32-300e_coco` |
+- full MAGFiLO v1.0 source images at 2048×2048;
+- committed grouped train/validation/test manifest;
+- seeds 3020–3024 on the identical split;
+- checkpoint and threshold selection on validation only;
+- pooled PQ at strict IoU `> 0.5` on the frozen test set.
 
-The upstream source is downloaded at run time under the ignored artifact root;
-it is not vendored or modified in this repository.
+The eight MMDetection methods retain upstream v3.3.0 model-zoo architecture,
+loss, optimizer, augmentation, and schedule. `mmdet_adapter.py` changes only
+the dataset, class count, seed/work directory, and image transforms needed for
+the common 2048 canvas.
 
-The domain-specific `unetpp_watershed` baseline follows the authors' original
-five-level channel layout (32–512), nested dense skip paths, four deep-
-supervision heads, BCE+Dice objective, Adam at 3e-4, and early stopping.
-Watershed is only the required semantic-to-instance adapter; its parameters are
-selected on validation and frozen for test.
+`fullres_unet` and `maskrcnn_consensus` are ports of released solar-filament
+code. `edgeattnet` and `detr_crop_unet` are marked reconstructions because the
+referenced public repositories do not contain runnable model implementations.
+See `models.yaml` and `docs/OFFICIAL_BASELINES.md` for exact provenance.

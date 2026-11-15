@@ -10,12 +10,8 @@ import yaml
 
 @dataclass(frozen=True)
 class Paths:
-    zip_path: Path
+    data_root: Path
     artifact_root: Path
-
-    @property
-    def extract_root(self) -> Path:
-        return self.artifact_root / "data_extracted"
 
     @property
     def yolo_root(self) -> Path:
@@ -49,9 +45,10 @@ class Paths:
 def add_path_args(parser: argparse.ArgumentParser) -> None:
     project_root = Path(os.environ.get("PROJECT_ROOT", Path.cwd()))
     parser.add_argument(
-        "--zip-path",
+        "--data-root",
         type=Path,
-        default=Path(os.environ.get("ZIP_PATH", project_root / "filament-segmentation-2026.zip")),
+        default=Path(os.environ.get("DATA_ROOT", project_root / "magfilo")),
+        help="MAGFiLO v1.0 root containing magfilo_2024_v1.0.json and images/",
     )
     parser.add_argument(
         "--artifact-root",
@@ -106,10 +103,9 @@ def resolve_checkpoint(paths: Paths, run_name: str, checkpoint: Path | None) -> 
 
 
 def paths_from_args(args: argparse.Namespace) -> Paths:
-    paths = Paths(args.zip_path.resolve(), args.artifact_root.resolve())
+    paths = Paths(args.data_root.expanduser().resolve(), args.artifact_root.expanduser().resolve())
     for directory in (
         paths.artifact_root,
-        paths.extract_root,
         paths.yolo_root,
         paths.artifact_root / "datasets",
         paths.runs_root,
@@ -122,14 +118,11 @@ def paths_from_args(args: argparse.Namespace) -> Paths:
 
 
 def discover_data(paths: Paths) -> tuple[Path, Path, Path]:
-    candidates = list(paths.extract_root.rglob("MAGFiLO_1.0_Annotations_kaggle2026_train.json"))
-    if len(candidates) != 1:
-        raise RuntimeError(f"Expected one annotation JSON, found: {candidates}")
-    annotation_path = candidates[0]
-    data_root = annotation_path.parent.parent
-    train_images = data_root / "train" / "train_images"
-    test_images = data_root / "test" / "test_images"
-    if not train_images.is_dir() or not test_images.is_dir():
-        raise FileNotFoundError(f"Invalid extracted data tree under {data_root}")
-    return annotation_path, train_images, test_images
+    annotation_path = paths.data_root / "magfilo_2024_v1.0.json"
+    image_root = paths.data_root / "images"
+    if not annotation_path.is_file():
+        raise FileNotFoundError(f"Missing full MAGFiLO annotation: {annotation_path}")
+    if not image_root.is_dir():
+        raise FileNotFoundError(f"Missing full MAGFiLO image directory: {image_root}")
+    return annotation_path, image_root, image_root
 

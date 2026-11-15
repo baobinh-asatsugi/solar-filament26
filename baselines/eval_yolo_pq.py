@@ -17,11 +17,11 @@ from filament.postprocess import mask_to_rle_object, polygon_to_rle, pq_stats_rl
 def main() -> None:
     parser = argparse.ArgumentParser(description="Pooled-PQ evaluation for the plain YOLOv8l-seg baseline")
     parser.add_argument("--checkpoint", type=Path, required=True); parser.add_argument("--manifest", type=Path, required=True)
-    parser.add_argument("--split", choices=("val", "test"), required=True); parser.add_argument("--zip-path", type=Path, required=True)
+    parser.add_argument("--split", choices=("val", "test"), required=True); parser.add_argument("--data-root", type=Path, required=True)
     parser.add_argument("--artifact-root", type=Path, required=True); parser.add_argument("--device", default="0")
     parser.add_argument("--output-dir", type=Path, required=True); parser.add_argument("--frozen-config", type=Path, default=None)
     args = parser.parse_args()
-    annotation_path, image_root, _ = discover_data(Paths(args.zip_path.resolve(), args.artifact_root.resolve()))
+    annotation_path, image_root, _ = discover_data(Paths(args.data_root.resolve(), args.artifact_root.resolve()))
     manifest = pd.read_csv(args.manifest); records = manifest[manifest.split == args.split]
     with annotation_path.open() as handle: coco = json.load(handle)
     images = {str(x["id"]): x for x in coco["images"]}; annotations = defaultdict(list)

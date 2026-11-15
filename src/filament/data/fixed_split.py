@@ -29,7 +29,7 @@ def _strata(frame: pd.DataFrame) -> pd.Series:
 
 def build_fixed_annotated_split(annotation_path: Path, output_dir: Path, *, val_fraction: float = 0.15,
                                 test_fraction: float = 0.20, seed: int = 3020,
-                                expected_physical_images: int | None = 707) -> dict:
+                                expected_physical_images: int | None = 958) -> dict:
     """Create one immutable grouped train/val/test split with no folds."""
     annotation_path, output_dir = annotation_path.resolve(), output_dir.resolve()
     if val_fraction <= 0 or test_fraction <= 0 or val_fraction + test_fraction >= 0.5:
@@ -64,12 +64,15 @@ def build_fixed_annotated_split(annotation_path: Path, output_dir: Path, *, val_
 
     images = pd.DataFrame(coco["images"]).rename(columns={"id": "image_id"})
     images["image_id"] = images["image_id"].astype(str)
+    images["record_instance_count"] = images["image_id"].map(
+        records.set_index("image_id")["record_instance_count"]
+    )
     manifest = images.merge(physical[["file_name", "split", "source", "instance_count", "foreground_area",
                                       "annotator_count"]], on="file_name", validate="many_to_one")
     manifest["sample_stem"] = manifest["image_id"].str.replace(r"[/\\]", "_", regex=True)
     manifest["annotator"] = manifest["image_id"].str.split("-", n=1).str[0]
     manifest = manifest[["sample_stem", "image_id", "file_name", "split", "annotator", "source",
-                         "instance_count", "foreground_area", "annotator_count"]]
+                         "record_instance_count", "instance_count", "foreground_area", "annotator_count"]]
     manifest = manifest.sort_values(["file_name", "image_id"]).reset_index(drop=True)
     if manifest.groupby("file_name")["split"].nunique().max() != 1:
         raise RuntimeError("Physical-image leakage across splits")
@@ -82,7 +85,7 @@ def build_fixed_annotated_split(annotation_path: Path, output_dir: Path, *, val_
         manifest_path.write_bytes(csv_bytes)
     summary = {split: {"physical_images": int(part["file_name"].nunique()),
                        "annotation_records": int(len(part)),
-                       "instances": int(round(part.groupby("file_name")["instance_count"].first().sum()))}
+                       "instances": int(part["record_instance_count"].sum())}
                for split, part in manifest.groupby("split", sort=True)}
     metadata = {
         "protocol": "fixed-grouped-train-val-test-v1", "status": "FROZEN", "seed": seed,

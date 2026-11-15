@@ -2,7 +2,8 @@
 set -euo pipefail
 MODEL="${1:?model key}"; SEED="${2:?seed}"; GPU="${3:-0}"
 PROJECT_ROOT="${PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"; ARTIFACT_ROOT="${ARTIFACT_ROOT:-${PROJECT_ROOT}/artifacts}"
-ZIP_PATH="${ZIP_PATH:-${PROJECT_ROOT}/filament-segmentation-2026.zip}"; PYTHON="${PYTHON:-python}"
+DATA_ROOT="${DATA_ROOT:-${PROJECT_ROOT}/magfilo}"; PYTHON="${PYTHON:-python}"
+export PROJECT_ROOT ARTIFACT_ROOT DATA_ROOT PYTHON
 export PYTHONPATH="${PROJECT_ROOT}/src:${PROJECT_ROOT}"; export CUDA_VISIBLE_DEVICES="${GPU}"
 UPSTREAM="${ARTIFACT_ROOT}/upstream/mmdetection-v3.3.0"
 case "${MODEL}" in
@@ -16,7 +17,7 @@ case "${MODEL}" in
   rtmdet_ins) CONFIG="configs/rtmdet/rtmdet-ins_l_8xb32-300e_coco.py";;
   *) echo "Unknown model: ${MODEL}" >&2; exit 2;;
 esac
-IMAGE_ROOT="$(find "${ARTIFACT_ROOT}/data_extracted" -type d -path '*/train/train_images' -print -quit)"
+IMAGE_ROOT="${DATA_ROOT}/images"
 WORK="${ARTIFACT_ROOT}/baseline_work/${MODEL}/seed${SEED}"; ANN="${ARTIFACT_ROOT}/baseline_data/annotations"
 "${PYTHON}" "${PROJECT_ROOT}/baselines/mmdet_adapter.py" --config "${UPSTREAM}/${CONFIG}" \
   --train-json "${ANN}/train.json" --val-json "${ANN}/val.json" --test-json "${ANN}/test.json" \
@@ -24,8 +25,8 @@ WORK="${ARTIFACT_ROOT}/baseline_work/${MODEL}/seed${SEED}"; ANN="${ARTIFACT_ROOT
 CHECKPOINT="$(cat "${WORK}/last_checkpoint")"; [[ "${CHECKPOINT}" = /* ]] || CHECKPOINT="${WORK}/${CHECKPOINT}"
 OUT="${ARTIFACT_ROOT}/results/baseline_${MODEL}_s${SEED}"
 "${PYTHON}" "${PROJECT_ROOT}/baselines/eval_mmdet_pq.py" --config "${WORK}/adapted_config.py" --checkpoint "${CHECKPOINT}" \
-  --manifest "${ARTIFACT_ROOT}/results/fixed_split/manifest.csv" --split val --zip-path "${ZIP_PATH}" \
+  --manifest "${PROJECT_ROOT}/splits/magfilo_v1/manifest.csv" --split val --data-root "${DATA_ROOT}" \
   --artifact-root "${ARTIFACT_ROOT}" --device cuda:0 --output-dir "${OUT}"
 "${PYTHON}" "${PROJECT_ROOT}/baselines/eval_mmdet_pq.py" --config "${WORK}/adapted_config.py" --checkpoint "${CHECKPOINT}" \
-  --manifest "${ARTIFACT_ROOT}/results/fixed_split/manifest.csv" --split test --zip-path "${ZIP_PATH}" \
+  --manifest "${PROJECT_ROOT}/splits/magfilo_v1/manifest.csv" --split test --data-root "${DATA_ROOT}" \
   --artifact-root "${ARTIFACT_ROOT}" --device cuda:0 --output-dir "${OUT}" --frozen-config "${OUT}/val_best.json"

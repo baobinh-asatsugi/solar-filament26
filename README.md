@@ -1,170 +1,186 @@
-# Solar Filament Instance Segmentation — M2-Lite
+# Solar Filament Instance Segmentation
 
-Minimal training and evaluation code for the best architecture developed in
-this project. The historical reference is `submission_m2_lite_single_fold2.csv`
-with public Kaggle PQ `0.39`. Kaggle is no longer used by the current protocol;
-new results are measured on one frozen annotated test split.
+Reproducible code for **M2-Lite** and 14 comparison baselines on the full
+MAGFiLO v1.0 dataset. Every method uses the same frozen physical-image split,
+the same five seeds, the same 2048×2048 source images, validation-only model
+selection, and the same pooled panoptic-quality evaluator.
 
-## Architecture
+The historical M2-Lite system produced public PQ `0.39` in the earlier Kaggle
+protocol. That number is retained only as provenance: results on the new full
+MAGFiLO split are not directly comparable and must be reported as five-seed
+mean ± standard deviation.
+
+## M2-Lite architecture
 
 ```text
-grayscale solar image
-  ├─ YOLOv8l-seg, 2048 px ─────────────── low-confidence instance seeds
-  └─ U-Net++ / EfficientNet-B3, 768 tiles ─ dense semantic/topology map
-                         │
-                         ▼
-              SIRA U-Net / ResNet34
+2048×2048 grayscale image
+  ├── YOLOv8l-seg proposals (2048 input)
+  └── U-Net++ / EfficientNet-B3 semantic map (overlapping 768 crops)
+                 │
+                 ▼
+       SIRA U-Net / ResNet34 mask refinement
        [intensity, CLAHE, seed, affinity, semantic]
-                         │
-                         ▼
-       17-feature HGBR candidate quality score
-                         │
-                         ▼
-       score filter + mask-IoU NMS + overlap resolver
-                         │
-                         ▼
-                  instance masks
+                 │
+                 ▼
+       17-feature HGBR quality scoring
+                 │
+                 ▼
+       threshold + mask-IoU NMS + overlap resolution
+                 │
+                 ▼
+             instance masks
 ```
 
-Only this chain is retained. There is no OOF/fold ensemble, graph selector,
-fusion branch, Q2/Q3, P5, or Mask2Former experiment in the runnable code.
+The model code intentionally keeps only this best-performing chain. Historical
+graph selectors, Q2/Q3 heads, ensembles, and experimental set models are not
+part of the runnable protocol.
 
-## Data protocol
+## Dataset
 
-One immutable, physical-image-grouped split is used:
+Download the complete MAGFiLO v1.0 release and arrange it at any private path:
 
-- 65% train: fit YOLO, semantic model, SIRA, and quality regressor;
-- 15% validation: choose checkpoints and decoder thresholds;
-- 20% annotated test: final evaluation only.
+```text
+/private/path/MAGFiLO/
+├── magfilo_2024_v1.0.json
+└── images/
+    ├── ... 958 image files ...
+```
 
-All annotation records for the same `file_name` remain in one split. Five
-seeds mean five independent training runs on this same split, not five folds.
-Do not pick the best seed from test; report mean and standard deviation.
+The annotation file contains 1,593 annotation records, 958 unique physical
+images, and 10,244 filament instances. Data, weights, caches, results, external
+repositories, and credentials are excluded by `.gitignore`.
 
-## Installation
+## Environment
 
-Python 3.11 and an NVIDIA GPU are recommended. Install a CUDA-enabled PyTorch
-build compatible with the server driver first, then:
+Python 3.10–3.11 and an NVIDIA GPU are recommended. Install a CUDA-enabled
+PyTorch/torchvision pair compatible with the host driver first, then:
 
 ```bash
-conda activate finetune-sd
+conda activate <project-environment>
 python -m pip install -r requirements.txt
 python -m pip install -e . --no-deps
-```
 
-Check CUDA:
-
-```bash
-python - <<'PY'
-import torch
-print(torch.__version__, torch.version.cuda)
-print(torch.cuda.is_available(), torch.cuda.device_count())
-assert torch.cuda.is_available()
-PY
-```
-
-## Data placement
-
-Put the competition archive at any private path. Generated data and weights
-also belong outside Git:
-
-```bash
 export PROJECT_ROOT=/path/to/solar-filament26
-export ZIP_PATH=/path/to/filament-segmentation-2026.zip
-export ARTIFACT_ROOT=/path/to/artifacts
-export PYTHON=/path/to/conda/envs/finetune-sd/bin/python
-export PYTHONPATH="$PROJECT_ROOT/src"
+export DATA_ROOT=/private/path/MAGFiLO
+export ARTIFACT_ROOT=/private/path/solar-filament-artifacts
+export PYTHON=/path/to/environment/bin/python
+export PYTHONPATH="$PROJECT_ROOT/src:$PROJECT_ROOT"
 cd "$PROJECT_ROOT"
+mkdir -p "$ARTIFACT_ROOT/logs"
 ```
 
-The archive must contain the MAGFiLO annotation JSON and train images. The
-repository `.gitignore` excludes archives, extracted data, checkpoints,
-prediction caches, and results.
+No personal username, mount point, or server-specific path is required.
 
-## Prepare the one fixed split
+## Frozen split
 
-Run exactly once and keep the resulting manifest:
+The committed manifest `splits/magfilo_v1/manifest.csv` is grouped by physical
+`file_name` and stratified by source plus instance-count quartile:
+
+| split | physical images | annotation records | instances |
+|---|---:|---:|---:|
+| train | 622 | 1,016 | 6,622 |
+| validation | 144 | 247 | 1,550 |
+| test | 192 | 330 | 2,072 |
+
+Manifest SHA-256:
+`224a710c143af577caef185d423c42dc3d92783e6c5a71a78ab13a72b52971cb`.
+
+Verify the local dataset and reproduce the prepared training views:
 
 ```bash
-mkdir -p "$ARTIFACT_ROOT/logs"
-bash scripts/prepare_fixed_split.sh 2>&1 | tee "$ARTIFACT_ROOT/logs/prepare.log"
+bash scripts/prepare_fixed_split.sh \
+  2>&1 | tee "$ARTIFACT_ROOT/logs/prepare_fixed_split.log"
+bash scripts/prepare_baselines.sh \
+  2>&1 | tee "$ARTIFACT_ROOT/logs/prepare_baselines.log"
 ```
 
-Important outputs:
+The split builder refuses to replace a frozen manifest with a different one.
+Train only on `train`, tune checkpoints/thresholds only on `val`, and evaluate
+`test` once after the method is frozen.
 
-```text
-$ARTIFACT_ROOT/results/fixed_split/manifest.csv
-$ARTIFACT_ROOT/results/fixed_split/metadata.json
-$ARTIFACT_ROOT/datasets/m2_lite_fixed/dataset.yaml
-```
+## Run M2-Lite
 
-The manifest contains only `train`, `val`, and `test`; it contains no fold ID.
-The split command refuses to overwrite a different frozen manifest.
-
-## Train one seed
+One seed:
 
 ```bash
 bash scripts/train_one_seed.sh 3020 0 \
   2>&1 | tee "$ARTIFACT_ROOT/logs/m2lite_s3020.log"
+# only after validation choices are frozen
+bash scripts/evaluate_final_test.sh 3020
 ```
 
-This trains and runs, in order: detector, semantic model, cached predictions,
-SIRA, refined predictions, quality model, and validation evaluation. It does
-not evaluate the final test split.
-
-## Train five seeds
-
-Prepare first, then launch seeds 3020–3024 across four GPUs:
+Five seeds (3020–3024) on four GPUs:
 
 ```bash
 bash scripts/launch_five_seeds_tmux.sh
 tmux ls
-tail -f "$ARTIFACT_ROOT/logs/m2lite_s3020.log"
 ```
 
-GPU 0 runs seed 3024 sequentially after seed 3020; the other three GPUs each
-run one seed. At most four training jobs are active at once.
+## Run 14 baselines
 
-## Final annotated test
+All methods consume the same 2048×2048 source canvas. Architecture-native
+operations—M2-Lite semantic crops, U-Net++ tiles, RoI heads, and the DETR crop
+refiner—do not resize the source dataset or change the evaluation resolution.
 
-Inspect validation results first:
+| group | methods | five-seed launcher |
+|---|---|---|
+| detector | YOLOv8l-seg | `scripts/launch_yolov8_five_seeds.sh` |
+| semantic instance adapter | U-Net++ + watershed | `scripts/launch_unetpp_watershed_five_seeds.sh` |
+| official MMDetection | Mask R-CNN, Cascade Mask R-CNN, HTC, SOLOv2, CondInst, QueryInst, Mask2Former, RTMDet-Ins | `scripts/launch_official_baselines.sh` |
+| solar/domain methods | full-resolution U-Net, EdgeAttNet, DETR→crop U-Net, Mask R-CNN consensus/alignment | `scripts/launch_domain_baselines.sh` |
+
+Commands:
 
 ```bash
-cat "$ARTIFACT_ROOT/results/m2lite_s3020_val.json"
+bash scripts/launch_yolov8_five_seeds.sh
+bash scripts/launch_unetpp_watershed_five_seeds.sh
+bash scripts/launch_domain_baselines.sh
 ```
 
-After the method and thresholds are frozen, evaluate each seed exactly once:
+The eight MMDetection methods need their isolated environment:
 
 ```bash
-for seed in 3020 3021 3022 3023 3024; do
-  bash scripts/evaluate_final_test.sh "$seed"
-done
+conda create -n mmdet-baselines python=3.11 -y
+conda activate mmdet-baselines
+# Install a compatible CUDA PyTorch build first.
+export PYTHON=/path/to/mmdet-baselines/bin/python
+bash scripts/setup_official_baselines.sh
+bash scripts/launch_official_baselines.sh
 ```
 
-Results are written to `$ARTIFACT_ROOT/results/m2lite_s<seed>_test.json` and
-contain pooled/global PQ, mean PQ, SQ, RQ, TP, FP, and FN. Global PQ uses
-one-to-one instance matching at strict IoU `> 0.5`.
+The setup script checks out pinned MMDetection v3.3.0 under the ignored
+artifact directory and builds all eight adapted configs before training.
+Detailed provenance and direct one-seed commands are in
+[`docs/OFFICIAL_BASELINES.md`](docs/OFFICIAL_BASELINES.md).
 
-## Tests
+## Summarize all 75 test runs
+
+After five seeds of M2-Lite and 14 baselines have finished:
 
 ```bash
-export PYTHONPATH="$PROJECT_ROOT/src"
-python -m compileall -q src
+bash scripts/summarize_five_seed_results.sh
+```
+
+Outputs:
+
+```text
+$ARTIFACT_ROOT/results/five_seed_runs.csv
+$ARTIFACT_ROOT/results/five_seed_summary.csv
+```
+
+The summary script explicitly reports missing method/seed pairs. The primary
+metric is pooled/global PQ with one-to-one matching at IoU `> 0.5`; it also
+reports mean PQ, SQ, RQ, TP, FP, and FN.
+
+## Verification
+
+```bash
+python -m compileall -q src baselines
 pytest -q
 ```
 
-## Official five-seed baselines
-
-The repository also contains dataset-only adapters for plain YOLOv8l-seg and
-eight official instance-segmentation baselines. Their papers, exact upstream
-configs, environment setup, launch commands, and mean±std summarizer are in
-[docs/OFFICIAL_BASELINES.md](docs/OFFICIAL_BASELINES.md).
-
-## Repository layout
-
-```text
-src/filament/   the single M2-Lite pipeline
-scripts/        prepare, one-seed, five-seed, and final-test commands
-tests/          split, metric, semantic-feature, and decoder tests
-docs/           report/proposal material and historical results
-```
+Third-party source used while creating the adapters lives under ignored
+`external/` and is never committed. Two domain baselines require transparent
+reconstructions: the DETR–U-Net authors did not release model code, while the
+public EdgeAttNet repository contains a placeholder model file. These are
+marked as reconstructions in the baseline documentation and results.
