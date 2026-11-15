@@ -59,5 +59,19 @@ def test_gpu_gate_excludes_libreoffice_but_fails_closed():
     root = Path(__file__).resolve().parents[1]
     gate = (root / "scripts/run_with_gpu_limit.sh").read_text()
     assert 'GPU_IGNORED_PROCESS_REGEX="${GPU_IGNORED_PROCESS_REGEX:-soffice\\\\.bin$}"' in gate
-    assert "--query-compute-apps=pid,process_name" in gate
+    assert "--query-compute-apps=pid,process_name,used_gpu_memory" in gate
+    assert 'GPU_MIN_ACTIVE_MEMORY_MIB="${GPU_MIN_ACTIVE_MEMORY_MIB:-1024}"' in gate
     assert 'echo "${MAX_JOBS_PER_GPU}"' in gate
+
+
+def test_yolo_evaluation_releases_gpu_before_cpu_sweep_and_regates_test():
+    root = Path(__file__).resolve().parents[1]
+    evaluator = (root / "baselines/eval_yolo_pq.py").read_text()
+    runner = (root / "scripts/run_yolov8_seed.sh").read_text()
+    launcher = (root / "scripts/launch_yolov8_five_seeds.sh").read_text()
+    assert "torch.cuda.empty_cache()" in evaluator
+    assert "detector memory released before PQ sweep" in evaluator
+    assert "YOLO {args.split} PQ sweep" in evaluator
+    assert 'if [[ ! -s "${OUT}/test_best.json" ]]' in runner
+    assert '"${GATE[@]}" "${PYTHON}"' in runner
+    assert "run_with_gpu_limit.sh" not in launcher

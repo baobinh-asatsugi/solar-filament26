@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import argparse
+import gc
 import json
 from collections import defaultdict
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
+import torch
 from tqdm import tqdm
 from ultralytics import YOLO
 
@@ -30,17 +31,36 @@ def main() -> None:
     for name in tqdm(sorted(records.file_name.unique()), desc=f"YOLO {args.split}"):
         result = model.predict(str(image_root / name), imgsz=2048, conf=.03, iou=.75, max_det=200,
                                retina_masks=True, device=args.device, verbose=False)[0]
-        if result.masks is None: cache[name] = (np.zeros((0, 1, 1), bool), np.empty(0))
-        else: cache[name] = (result.masks.data.cpu().numpy().astype(bool), result.boxes.conf.cpu().numpy())
+        if result.masks is None:
+            cache[name] = []
+        else:
+            masks = result.masks.data.cpu().numpy().astype(bool)
+            scores = result.boxes.conf.cpu().numpy()
+            cache[name] = [
+                (mask_to_rle_object(mask), float(score), int(mask.sum()))
+                for mask, score in zip(masks, scores)
+            ]
+        del result
+
+    # PQ tuning below is CPU-only. Release the detector and its CUDA cache so a
+    # waiting training phase may use this GPU while the grid is evaluated.
+    del model
+    gc.collect()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+        torch.cuda.ipc_collect()
+    print(f"YOLO {args.split}: GPU inference complete; detector memory released before PQ sweep", flush=True)
     configs = [(t, a) for t in (.05, .10, .15, .20, .25, .30, .40, .50) for a in (100, 200, 300)]
     if args.frozen_config:
         frozen = json.loads(args.frozen_config.read_text()); configs = [(float(frozen["score_threshold"]), int(frozen["min_area"]))]
     rows = []
-    for threshold, area in configs:
+    for threshold, area in tqdm(configs, desc=f"YOLO {args.split} PQ sweep"):
         stat = dict(iou_sum=0., pq_sum=0., records=0, tp=0, fp=0, fn=0)
         for name, group in records.groupby("file_name"):
-            masks, scores = cache[name]
-            pred = [mask_to_rle_object(mask) for mask, score in zip(masks, scores) if score >= threshold and mask.sum() >= area]
+            pred = [
+                encoded for encoded, score, mask_area in cache[name]
+                if score >= threshold and mask_area >= area
+            ]
             for row in group.itertuples(index=False):
                 info = images[str(row.image_id)]
                 gt = [polygon_to_rle(x["segmentation"], info["height"], info["width"]) for x in annotations[str(row.image_id)]]
