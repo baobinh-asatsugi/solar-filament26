@@ -11,7 +11,10 @@ import numpy as np
 import pandas as pd
 from pycocotools import mask as mask_utils
 
-from filament.postprocess import mask_to_rle_object, polygon_to_rle, pq_stats_rle
+from filament.postprocess import (
+    accumulate_metric_record, finalize_metric_totals, mask_to_rle_object,
+    metric_totals, polygon_to_rle, pq_stats_rle,
+)
 
 
 INPUT_SIZE = 2048
@@ -108,7 +111,7 @@ def connected_instances(probability: np.ndarray, threshold: float, min_area: int
 
 def pooled_pq(coco: dict, records_frame: pd.DataFrame, predictions: dict[str, list[np.ndarray]]) -> dict:
     images, annotations, _ = annotation_maps(coco)
-    stats = {"iou_sum": 0.0, "pq_sum": 0.0, "records": 0, "tp": 0, "fp": 0, "fn": 0}
+    stats = metric_totals()
     encoded_predictions = {
         name: [mask_to_rle_object(mask) for mask in masks] for name, masks in predictions.items()
     }
@@ -119,20 +122,8 @@ def pooled_pq(coco: dict, records_frame: pd.DataFrame, predictions: dict[str, li
             for item in annotations[str(row.image_id)]
         ]
         values = pq_stats_rle(ground_truth, encoded_predictions.get(row.file_name, []))
-        for key in ("iou_sum", "tp", "fp", "fn"):
-            stats[key] += values[key]
-        stats["pq_sum"] += values["pq"]
-        stats["records"] += 1
-    denominator = stats["tp"] + 0.5 * stats["fp"] + 0.5 * stats["fn"]
-    return {
-        "global_pq": stats["iou_sum"] / denominator if denominator else 0.0,
-        "mean_pq": stats["pq_sum"] / max(stats["records"], 1),
-        "sq": stats["iou_sum"] / max(stats["tp"], 1),
-        "rq": stats["tp"] / denominator if denominator else 0.0,
-        "tp": int(stats["tp"]),
-        "fp": int(stats["fp"]),
-        "fn": int(stats["fn"]),
-    }
+        accumulate_metric_record(stats, values)
+    return finalize_metric_totals(stats)
 
 
 def resolve_scored_masks(

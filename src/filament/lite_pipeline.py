@@ -12,7 +12,10 @@ from sklearn.ensemble import HistGradientBoostingRegressor
 
 from .gated_selection import FEATURES, build_candidate_features, select_set_aware_instances
 from .oof_bank import ProposalBank
-from .postprocess import polygon_to_rle, pq_stats_rle, rle_from_json
+from .postprocess import (
+    accumulate_metric_record, finalize_metric_totals, metric_totals,
+    polygon_to_rle, pq_stats_rle, rle_from_json,
+)
 
 
 def quality_model(seed: int) -> HistGradientBoostingRegressor:
@@ -74,7 +77,7 @@ def candidate_table(manifest: pd.DataFrame, split: str, prediction_root: Path,
 def score_payloads(payloads: dict, candidates: pd.DataFrame, score_column: str, *, score_threshold: float,
                    min_area: int, cluster_iou: float, duplicate_iou: float) -> dict:
     grouped = {name: part.sort_values("candidate_index") for name, part in candidates.groupby("file_name")}
-    stats = dict(iou_sum=0.0, pq_sum=0.0, records=0, tp=0, fp=0, fn=0, selected=0)
+    stats = {**metric_totals(), "selected": 0}
     for file_name, (_, instances, ground_truth) in payloads.items():
         scores = grouped[file_name][score_column].to_numpy(np.float32)
         rles = [rle_from_json(item["rle"]) for item in instances]
@@ -83,14 +86,5 @@ def score_payloads(payloads: dict, candidates: pd.DataFrame, score_column: str, 
         stats["selected"] += len(predictions)
         for gt in ground_truth:
             values = pq_stats_rle(gt, predictions)
-            for key in ("iou_sum", "tp", "fp", "fn"):
-                stats[key] += values[key]
-            stats["pq_sum"] += values["pq"]
-            stats["records"] += 1
-    denominator = stats["tp"] + 0.5 * stats["fp"] + 0.5 * stats["fn"]
-    return {"global_pq": stats["iou_sum"] / denominator if denominator else 0.0,
-            "mean_pq": stats["pq_sum"] / max(stats["records"], 1),
-            "sq": stats["iou_sum"] / max(stats["tp"], 1),
-            "rq": stats["tp"] / denominator if denominator else 0.0,
-            "tp": int(stats["tp"]), "fp": int(stats["fp"]), "fn": int(stats["fn"]),
-            "selected_instances": int(stats["selected"])}
+            accumulate_metric_record(stats, values)
+    return {**finalize_metric_totals(stats), "selected_instances": int(stats["selected"])}

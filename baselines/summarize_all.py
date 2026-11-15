@@ -36,7 +36,11 @@ def main() -> None:
                 missing.append((method, seed, str(path)))
     frame = pd.DataFrame(rows)
     if frame.empty: raise RuntimeError(f"No test result JSON files below {root}")
-    metrics = [name for name in ("global_pq", "mean_pq", "sq", "rq", "tp", "fp", "fn") if name in frame]
+    metrics = [name for name in (
+        "global_pq", "mean_pq", "sq", "rq",
+        "semantic_dice", "semantic_iou", "mean_semantic_dice", "mean_semantic_iou",
+        "tp", "fp", "fn",
+    ) if name in frame]
     summary = frame.groupby("method")[metrics].agg(["mean", "std", "count"])
     output = root / "five_seed_summary.csv"; summary.to_csv(output)
     frame.to_csv(root / "five_seed_runs.csv", index=False)

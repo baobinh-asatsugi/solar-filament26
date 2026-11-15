@@ -196,7 +196,9 @@ $ARTIFACT_ROOT/results/five_seed_summary.csv
 
 The summary script explicitly reports missing method/seed pairs. The primary
 metric is pooled/global PQ with one-to-one matching at IoU `> 0.5`; it also
-reports mean PQ, SQ, RQ, TP, FP, and FN.
+reports mean PQ, SQ, RQ, TP, FP, and FN. Every evaluator also reports pooled
+foreground Dice/IoU and mean-per-annotation-record Dice/IoU. Model selection
+and decoder tuning remain based only on validation global PQ.
 
 ## Verification
 

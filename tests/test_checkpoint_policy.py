@@ -77,3 +77,14 @@ def test_yolo_evaluation_releases_gpu_before_cpu_sweep_and_regates_test():
     assert 'if [[ ! -s "${OUT}/test_best.json" ]]' in runner
     assert '"${GATE[@]}" "${PYTHON}"' in runner
     assert "run_with_gpu_limit.sh" not in launcher
+
+
+def test_yolo_metrics_launcher_reuses_frozen_validation_config():
+    root = Path(__file__).resolve().parents[1]
+    runner = (root / "scripts/reevaluate_yolov8_test_seed.sh").read_text()
+    launcher = (root / "scripts/launch_yolov8_test_metrics.sh").read_text()
+    assert '--split test' in runner
+    assert '--frozen-config "${FROZEN}"' in runner
+    assert 'test_best.pq_only.json' in runner
+    assert 'semantic_dice' in runner
+    assert 'reevaluate_yolov8_test_seed.sh 3024 0' in launcher

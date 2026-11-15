@@ -20,7 +20,10 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from filament.config import Paths, discover_data
-from filament.postprocess import mask_to_rle_object, polygon_to_rle, pq_stats_rle
+from filament.postprocess import (
+    accumulate_metric_record, finalize_metric_totals, mask_to_rle_object,
+    metric_totals, polygon_to_rle, pq_stats_rle,
+)
 from filament.semantic_data import SemanticTileDataset, normalize_intensity
 
 
@@ -159,19 +162,15 @@ def evaluate(args):
         frozen = json.loads(frozen_path.read_text()); configs = [(frozen["threshold"], int(frozen["min_distance"]), int(frozen["min_area"]))]
     rows = []
     for threshold, distance, area in tqdm(configs, desc="watershed grid"):
-        stat = dict(iou_sum=0., pq_sum=0., records=0, tp=0, fp=0, fn=0)
+        stat = metric_totals()
         for name, group in records.groupby("file_name"):
             prediction = instances_from_probability(cache[name], threshold, distance, area)
             for row in group.itertuples(index=False):
                 info = images[str(row.image_id)]; gt = [polygon_to_rle(x["segmentation"], info["height"], info["width"]) for x in annotations[str(row.image_id)]]
                 value = pq_stats_rle(gt, prediction)
-                for key in ("iou_sum", "tp", "fp", "fn"): stat[key] += value[key]
-                stat["pq_sum"] += value["pq"]; stat["records"] += 1
-        den = stat["tp"] + .5*stat["fp"] + .5*stat["fn"]
+                accumulate_metric_record(stat, value)
         rows.append({"threshold": threshold, "min_distance": distance, "min_area": area,
-                     "global_pq": stat["iou_sum"]/den if den else 0., "mean_pq": stat["pq_sum"]/stat["records"],
-                     "sq": stat["iou_sum"]/max(stat["tp"], 1), "rq": stat["tp"]/den if den else 0.,
-                     "tp": stat["tp"], "fp": stat["fp"], "fn": stat["fn"]})
+                     **finalize_metric_totals(stat)})
     ranking = pd.DataFrame(rows).sort_values("global_pq", ascending=False); ranking.to_csv(args.output_dir / f"{args.split}_pq.csv", index=False)
     (args.output_dir / f"{args.split}_best.json").write_text(json.dumps(ranking.iloc[0].to_dict(), indent=2) + "\n"); print(ranking.head(10).to_string(index=False))
 

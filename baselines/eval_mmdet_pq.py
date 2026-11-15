@@ -12,16 +12,10 @@ from mmdet.apis import inference_detector, init_detector
 from tqdm import tqdm
 
 from filament.config import Paths, discover_data
-from filament.postprocess import mask_to_rle_object, polygon_to_rle, pq_stats_rle
-
-
-def _metrics(stats: dict) -> dict:
-    denominator = stats["tp"] + .5 * stats["fp"] + .5 * stats["fn"]
-    return {"global_pq": stats["iou_sum"] / denominator if denominator else 0.0,
-            "mean_pq": stats["pq_sum"] / max(stats["records"], 1),
-            "sq": stats["iou_sum"] / max(stats["tp"], 1),
-            "rq": stats["tp"] / denominator if denominator else 0.0,
-            "tp": stats["tp"], "fp": stats["fp"], "fn": stats["fn"]}
+from filament.postprocess import (
+    accumulate_metric_record, finalize_metric_totals, mask_to_rle_object,
+    metric_totals, polygon_to_rle, pq_stats_rle,
+)
 
 
 def main() -> None:
@@ -57,7 +51,7 @@ def main() -> None:
         configurations = [(float(frozen["score_threshold"]), int(frozen["min_area"]))]
     rows = []
     for threshold, min_area in configurations:
-        stats = dict(iou_sum=0., pq_sum=0., records=0, tp=0, fp=0, fn=0)
+        stats = metric_totals()
         for file_name, group in records.groupby("file_name"):
             masks, scores = cache[file_name]
             predictions = [mask_to_rle_object(mask) for mask, score in zip(masks, scores)
@@ -67,9 +61,9 @@ def main() -> None:
                 gt = [polygon_to_rle(item["segmentation"], info["height"], info["width"])
                       for item in annotations[str(row.image_id)]]
                 values = pq_stats_rle(gt, predictions)
-                for key in ("iou_sum", "tp", "fp", "fn"): stats[key] += values[key]
-                stats["pq_sum"] += values["pq"]; stats["records"] += 1
-        rows.append({"score_threshold": threshold, "min_area": min_area, **_metrics(stats)})
+                accumulate_metric_record(stats, values)
+        rows.append({"score_threshold": threshold, "min_area": min_area,
+                     **finalize_metric_totals(stats)})
     ranking = pd.DataFrame(rows).sort_values("global_pq", ascending=False)
     args.output_dir.mkdir(parents=True, exist_ok=True)
     ranking.to_csv(args.output_dir / f"{args.split}_pq.csv", index=False)

@@ -12,7 +12,10 @@ from tqdm import tqdm
 from ultralytics import YOLO
 
 from filament.config import Paths, discover_data
-from filament.postprocess import mask_to_rle_object, polygon_to_rle, pq_stats_rle
+from filament.postprocess import (
+    accumulate_metric_record, finalize_metric_totals, mask_to_rle_object,
+    metric_totals, polygon_to_rle, pq_stats_rle,
+)
 
 
 def main() -> None:
@@ -55,7 +58,7 @@ def main() -> None:
         frozen = json.loads(args.frozen_config.read_text()); configs = [(float(frozen["score_threshold"]), int(frozen["min_area"]))]
     rows = []
     for threshold, area in tqdm(configs, desc=f"YOLO {args.split} PQ sweep"):
-        stat = dict(iou_sum=0., pq_sum=0., records=0, tp=0, fp=0, fn=0)
+        stat = metric_totals()
         for name, group in records.groupby("file_name"):
             pred = [
                 encoded for encoded, score, mask_area in cache[name]
@@ -65,14 +68,9 @@ def main() -> None:
                 info = images[str(row.image_id)]
                 gt = [polygon_to_rle(x["segmentation"], info["height"], info["width"]) for x in annotations[str(row.image_id)]]
                 value = pq_stats_rle(gt, pred)
-                for key in ("iou_sum", "tp", "fp", "fn"): stat[key] += value[key]
-                stat["pq_sum"] += value["pq"]; stat["records"] += 1
-        denominator = stat["tp"] + .5 * stat["fp"] + .5 * stat["fn"]
+                accumulate_metric_record(stat, value)
         rows.append({"score_threshold": threshold, "min_area": area,
-                     "global_pq": stat["iou_sum"] / denominator if denominator else 0.,
-                     "mean_pq": stat["pq_sum"] / max(stat["records"], 1),
-                     "sq": stat["iou_sum"] / max(stat["tp"], 1), "rq": stat["tp"] / denominator if denominator else 0.,
-                     "tp": stat["tp"], "fp": stat["fp"], "fn": stat["fn"]})
+                     **finalize_metric_totals(stat)})
     ranking = pd.DataFrame(rows).sort_values("global_pq", ascending=False)
     args.output_dir.mkdir(parents=True, exist_ok=True); ranking.to_csv(args.output_dir / f"{args.split}_pq.csv", index=False)
     (args.output_dir / f"{args.split}_best.json").write_text(json.dumps(ranking.iloc[0].to_dict(), indent=2) + "\n")

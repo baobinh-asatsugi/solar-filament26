@@ -65,7 +65,65 @@ def pq_stats_rle(gt_rles: list[dict], pred_rles: list[dict], threshold: float = 
     pq = iou_sum / denominator if denominator else 0.0
     sq = iou_sum / tp if tp else 0.0
     rq = tp / denominator if denominator else 0.0
-    return {"pq": pq, "sq": sq, "rq": rq, "iou_sum": iou_sum, "tp": tp, "fp": fp, "fn": fn}
+    gt_union = mask_utils.merge(gt_rles) if gt_rles else None
+    pred_union = mask_utils.merge(pred_rles) if pred_rles else None
+    gt_area = float(mask_utils.area(gt_union)) if gt_union is not None else 0.0
+    pred_area = float(mask_utils.area(pred_union)) if pred_union is not None else 0.0
+    if gt_union is not None and pred_union is not None:
+        intersection = float(mask_utils.area(mask_utils.merge([gt_union, pred_union], intersect=True)))
+    else:
+        intersection = 0.0
+    semantic_union = gt_area + pred_area - intersection
+    semantic_denominator = gt_area + pred_area
+    return {
+        "pq": pq, "sq": sq, "rq": rq, "iou_sum": iou_sum,
+        "tp": tp, "fp": fp, "fn": fn,
+        "semantic_intersection": intersection,
+        "semantic_union": semantic_union,
+        "semantic_denominator": semantic_denominator,
+        "semantic_iou": intersection / semantic_union if semantic_union else 0.0,
+        "semantic_dice": 2.0 * intersection / semantic_denominator if semantic_denominator else 0.0,
+    }
+
+
+def metric_totals() -> dict:
+    return {
+        "iou_sum": 0.0, "pq_sum": 0.0, "records": 0,
+        "tp": 0, "fp": 0, "fn": 0,
+        "semantic_intersection": 0.0, "semantic_union": 0.0,
+        "semantic_denominator": 0.0, "semantic_iou_sum": 0.0,
+        "semantic_dice_sum": 0.0,
+    }
+
+
+def accumulate_metric_record(total: dict, record: dict) -> None:
+    for key in (
+        "iou_sum", "tp", "fp", "fn", "semantic_intersection",
+        "semantic_union", "semantic_denominator",
+    ):
+        total[key] = total.get(key, 0) + record[key]
+    total["pq_sum"] = total.get("pq_sum", 0.0) + record["pq"]
+    total["semantic_iou_sum"] = total.get("semantic_iou_sum", 0.0) + record["semantic_iou"]
+    total["semantic_dice_sum"] = total.get("semantic_dice_sum", 0.0) + record["semantic_dice"]
+    total["records"] = total.get("records", 0) + 1
+
+
+def finalize_metric_totals(total: dict) -> dict:
+    denominator = total["tp"] + 0.5 * total["fp"] + 0.5 * total["fn"]
+    records = max(total["records"], 1)
+    return {
+        "global_pq": total["iou_sum"] / denominator if denominator else 0.0,
+        "mean_pq": total["pq_sum"] / records,
+        "sq": total["iou_sum"] / max(total["tp"], 1),
+        "rq": total["tp"] / denominator if denominator else 0.0,
+        "semantic_iou": total["semantic_intersection"] / total["semantic_union"]
+        if total["semantic_union"] else 0.0,
+        "semantic_dice": 2.0 * total["semantic_intersection"] / total["semantic_denominator"]
+        if total["semantic_denominator"] else 0.0,
+        "mean_semantic_iou": total["semantic_iou_sum"] / records,
+        "mean_semantic_dice": total["semantic_dice_sum"] / records,
+        "tp": int(total["tp"]), "fp": int(total["fp"]), "fn": int(total["fn"]),
+    }
 
 
 def rle_to_json(rle: dict) -> dict:
