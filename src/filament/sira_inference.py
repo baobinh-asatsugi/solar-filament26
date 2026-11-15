@@ -9,7 +9,7 @@ from pycocotools import mask as mask_utils
 
 from .refiner_model import build_refiner
 from .semantic_data import crop_at, normalize_intensity
-from .sira_data import proposal_centers, seed_affinity
+from .sira_data import expanded_context_crop, proposal_centers, seed_affinity
 from .postprocess import rle_from_json
 
 
@@ -36,6 +36,8 @@ def _paste(sum_map: np.ndarray, weight_map: np.ndarray, patch: np.ndarray, cx: i
 def refine_candidates(model, config: dict, image: np.ndarray, candidates: list[dict], semantic: np.ndarray,
                       device: torch.device, batch_size: int = 4) -> list[dict]:
     crop_size = int(config["crop_size"]); neighbor_channel = bool(config.get("neighbor_channel", False))
+    semantic_channel = bool(config.get("semantic_channel", int(config.get("in_channels", 5)) >= 5 + int(neighbor_channel)))
+    context_channel = bool(config.get("context_channel", False)); context_scale = float(config.get("context_scale", 2.0))
     clahe_full = cv2.createCLAHE(2.0, (8, 8)).apply(image)
     outputs = []
     competition_count = None
@@ -59,7 +61,11 @@ def refine_candidates(model, config: dict, image: np.ndarray, candidates: list[d
             clahe = crop_at(clahe_full, cx, cy, crop_size, reflect=True)
             seed_crop = crop_at(seed, cx, cy, crop_size, reflect=False)
             sem_crop = crop_at(semantic, cx, cy, crop_size, reflect=False)
-            features = [normalize_intensity(gray), normalize_intensity(clahe), seed_crop.astype(np.float32), seed_affinity(seed_crop), sem_crop]
+            features = [normalize_intensity(gray), normalize_intensity(clahe), seed_crop.astype(np.float32), seed_affinity(seed_crop)]
+            if context_channel:
+                context = expanded_context_crop(image, cx, cy, crop_size, context_scale)
+                features.append(normalize_intensity(context))
+            if semantic_channel: features.append(sem_crop)
             if neighbor_channel: features.append(crop_at(neighbor, cx, cy, crop_size, reflect=False).astype(np.float32))
             tensors.append(np.stack(features)); locations.append((cx, cy))
             if len(tensors) >= batch_size:

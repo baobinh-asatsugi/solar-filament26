@@ -48,6 +48,23 @@ def seed_affinity(seed: np.ndarray) -> np.ndarray:
     return np.clip(0.5 + 0.5 * signed / scale, 0.0, 1.0).astype(np.float32)
 
 
+def expanded_context_crop(
+    image: np.ndarray, cx: int, cy: int, crop_size: int, scale: float = 2.0,
+) -> np.ndarray:
+    """Return a cheap, proposal-centred wider field of view.
+
+    The output has the same spatial size as the local crop, so it can be used
+    as one additional input channel without a second encoder or semantic model.
+    """
+    if scale < 1.0:
+        raise ValueError(f"context scale must be >= 1, got {scale}")
+    expanded_size = max(crop_size, int(round(crop_size * scale)))
+    expanded = crop_at(image, cx, cy, expanded_size, reflect=True)
+    if expanded_size == crop_size:
+        return expanded
+    return cv2.resize(expanded, (crop_size, crop_size), interpolation=cv2.INTER_AREA)
+
+
 def proposal_centers(box: list[float], crop_size: int) -> list[tuple[int, int]]:
     x0, y0, x1, y1 = map(float, box)
     step = max(64, int(crop_size * 0.65))
@@ -63,14 +80,16 @@ class SIRADataset(Dataset):
 
     def __init__(
         self, annotation_path: Path, image_dir: Path, manifest_path: Path,
-        bank_root: Path, split_folds: set[int], crop_size: int = 512,
+        bank_root: Path, split_names: set[str], crop_size: int = 512,
         annotation_strategy: str = "medoid", semantic_root: Path | None = None,
+        semantic_channel: bool = True,
+        context_channel: bool = False, context_scale: float = 2.0,
         neighbor_channel: bool = False, min_proposal_iou: float = 0.02,
         seed: int = 3020, training: bool = True, negative_fraction: float = 0.35,
     ):
         with annotation_path.open() as handle: self.coco = json.load(handle)
         manifest = pd.read_csv(manifest_path)
-        manifest = manifest[manifest["fold"].isin(split_folds)].copy()
+        manifest = manifest[manifest["split"].isin(split_names)].copy()
         manifest = select_annotation_records(manifest, self.coco, annotation_strategy, seed)
         self.records = {row.file_name: str(row.image_id) for row in manifest.itertuples(index=False)}
         self.images = {str(item["id"]): item for item in self.coco["images"]}
@@ -78,20 +97,22 @@ class SIRADataset(Dataset):
         for item in self.coco["annotations"]: anns[str(item["image_id"])].append(item)
         self.annotations = anns; self.image_dir = Path(image_dir); self.bank_root = Path(bank_root)
         self.semantic_root = Path(semantic_root) if semantic_root else None
+        self.semantic_channel = semantic_channel
+        self.context_channel = context_channel; self.context_scale = float(context_scale)
         self.crop_size = crop_size; self.neighbor_channel = neighbor_channel; self.training = training
         self._target_cache: dict[str, list[np.ndarray]] = {}
         self.bank_paths: dict[str, Path] = {}
-        for fold in split_folds:
-            for path in (self.bank_root / f"fold{fold}").glob("*.json.gz"):
+        for split in split_names:
+            for path in (self.bank_root / split).glob("*.json.gz"):
                 self.bank_paths[path.name.removesuffix(".json.gz")] = path
         # Match filenames robustly because extension may differ.
         stems = self.bank_paths
-        self.items, self.file_folds = [], {}
+        self.items, self.file_splits = [], {}
         for file_name, image_id in sorted(self.records.items()):
             bank_path = stems.get(Path(file_name).stem)
             if bank_path is None: raise FileNotFoundError(f"OOF bank missing {file_name} under {self.bank_root}")
             payload = OOFProposalBank(bank_path.parent).load(bank_path, decode_masks=False)
-            self.file_folds[file_name] = int(payload["fold"])
+            self.file_splits[file_name] = str(manifest.loc[manifest["file_name"] == file_name, "split"].iloc[0])
             info = self.images[image_id]
             pred_rles = [rle_from_json(item["rle"]) for item in payload["instances"]]
             gt_rles = [polygon_to_rle(item["segmentation"], info["height"], info["width"]) for item in anns[image_id]]
@@ -128,8 +149,8 @@ class SIRADataset(Dataset):
 
     def _semantic(self, file_name: str, shape: tuple[int, int]) -> np.ndarray:
         if self.semantic_root is None: return np.zeros(shape, dtype=np.float32)
-        fold = self.file_folds[file_name]
-        path = self.semantic_root / f"fold{fold}" / f"{Path(file_name).stem}.npz"
+        split = self.file_splits[file_name]
+        path = self.semantic_root / split / f"{Path(file_name).stem}.npz"
         if not path.is_file(): raise FileNotFoundError(f"OOF semantic cache missing: {path}")
         return _semantic_probability(str(path))
 
@@ -160,9 +181,14 @@ class SIRADataset(Dataset):
         target_crop = crop_at(target, cx, cy, self.crop_size, reflect=False)
         exclusion_crop = crop_at(exclusion, cx, cy, self.crop_size, reflect=False)
         neighbor_crop = crop_at(neighbor, cx, cy, self.crop_size, reflect=False)
-        semantic_crop = crop_at(self._semantic(file_name, image.shape), cx, cy, self.crop_size, reflect=False)
         clahe = cv2.createCLAHE(2.0, (8, 8)).apply(gray)
-        features = [normalize_intensity(gray), normalize_intensity(clahe), seed_crop.astype(np.float32), seed_affinity(seed_crop), semantic_crop]
+        features = [normalize_intensity(gray), normalize_intensity(clahe), seed_crop.astype(np.float32), seed_affinity(seed_crop)]
+        if self.context_channel:
+            context = expanded_context_crop(image, cx, cy, self.crop_size, self.context_scale)
+            features.append(normalize_intensity(context))
+        if self.semantic_channel:
+            semantic_crop = crop_at(self._semantic(file_name, image.shape), cx, cy, self.crop_size, reflect=False)
+            features.append(semantic_crop)
         if self.neighbor_channel: features.append(neighbor_crop.astype(np.float32))
         features = np.stack(features).astype(np.float32)
         if self.training:

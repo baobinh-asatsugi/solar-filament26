@@ -8,6 +8,8 @@
 
 # Generated datasets, predictions, runs, and submissions
 /artifacts/
+/external/
+/baseline_work/
 /data/
 /datasets/
 /logs/

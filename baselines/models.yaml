@@ -1,0 +1,36 @@
+mask_rcnn:
+  config: mask-rcnn_r50_fpn_1x_coco
+  paper: https://openaccess.thecvf.com/content_ICCV_2017/papers/He_Mask_R-CNN_ICCV_2017_paper.pdf
+  github: https://github.com/open-mmlab/mmdetection
+cascade_mask_rcnn:
+  config: cascade-mask-rcnn_r50_fpn_1x_coco
+  paper: https://arxiv.org/abs/1712.00726
+  github: https://github.com/open-mmlab/mmdetection
+htc:
+  config: htc_r50_fpn_1x_coco
+  paper: https://arxiv.org/abs/1901.07518
+  github: https://github.com/open-mmlab/mmdetection
+solov2:
+  config: solov2_r50_fpn_1x_coco
+  paper: https://papers.neurips.cc/paper/2020/file/cd3afef9b8b89558cd56638c3631868a-Paper.pdf
+  github: https://github.com/WXinlong/SOLO
+condinst:
+  config: condinst_r50_fpn_ms-poly-90k_coco_instance
+  paper: https://arxiv.org/abs/2003.05664
+  github: https://github.com/aim-uofa/AdelaiDet
+queryinst:
+  config: queryinst_r50_fpn_1x_coco
+  paper: https://openaccess.thecvf.com/content/ICCV2021/papers/Fang_Instances_As_Queries_ICCV_2021_paper.pdf
+  github: https://github.com/hustvl/QueryInst
+mask2former:
+  config: mask2former_r50_8xb2-lsj-50e_coco
+  paper: https://openaccess.thecvf.com/content/CVPR2022/papers/Cheng_Masked-Attention_Mask_Transformer_for_Universal_Image_Segmentation_CVPR_2022_paper.pdf
+  github: https://github.com/facebookresearch/Mask2Former
+rtmdet_ins:
+  config: rtmdet-ins_l_8xb32-300e_coco
+  paper: https://arxiv.org/abs/2212.07784
+  github: https://github.com/open-mmlab/mmdetection
+unetpp_watershed:
+  config: original-five-level-deep-supervision-plus-watershed
+  paper: https://pmc.ncbi.nlm.nih.gov/articles/PMC7329239/
+  github: https://github.com/MrGiovanni/UNetPlusPlus

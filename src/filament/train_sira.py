@@ -36,14 +36,16 @@ def validate(model, loader, device, exclusion_weight: float) -> dict[str, float]
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="M2/M3 train SIRA from actual OOF detector seeds")
+    parser = argparse.ArgumentParser(description="Train the M2-Lite SIRA refiner on one fixed split")
     add_path_args(parser)
     parser.add_argument("--run-name", required=True); parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--bank-root", type=Path, required=True); parser.add_argument("--semantic-root", type=Path, default=None)
-    parser.add_argument("--val-fold", type=int, default=0); parser.add_argument("--folds", type=int, default=5)
     parser.add_argument("--architecture", choices=("unet", "unetplusplus"), default="unet")
     parser.add_argument("--encoder", default="resnet34"); parser.add_argument("--encoder-weights", default="imagenet")
     parser.add_argument("--crop-size", type=int, default=512); parser.add_argument("--annotation-strategy", default="medoid")
+    parser.add_argument("--semantic-channel", action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument("--context-channel", action=argparse.BooleanOptionalAction, default=False)
+    parser.add_argument("--context-scale", type=float, default=2.0)
     parser.add_argument("--neighbor-channel", action="store_true"); parser.add_argument("--exclusion-weight", type=float, default=0.0)
     parser.add_argument("--min-proposal-iou", type=float, default=.02); parser.add_argument("--negative-fraction", type=float, default=.35)
     parser.add_argument("--epochs", type=int, default=25)
@@ -58,24 +60,25 @@ def main() -> None:
     run_dir = paths.run_dir(args.run_name)
     if run_dir.exists(): raise FileExistsError(run_dir)
     run_dir.mkdir(parents=True)
-    train_folds = set(range(args.folds)) - {args.val_fold}; val_folds = {args.val_fold}
     common = dict(annotation_path=annotation, image_dir=image_dir, manifest_path=args.manifest.resolve(),
                   bank_root=args.bank_root.resolve(), crop_size=args.crop_size, annotation_strategy=args.annotation_strategy,
                   semantic_root=args.semantic_root.resolve() if args.semantic_root else None,
+                  semantic_channel=args.semantic_channel,
+                  context_channel=args.context_channel, context_scale=args.context_scale,
                   neighbor_channel=args.neighbor_channel, min_proposal_iou=args.min_proposal_iou, seed=args.seed)
-    train_set = SIRADataset(split_folds=train_folds, training=True, negative_fraction=args.negative_fraction, **common)
-    val_set = SIRADataset(split_folds=val_folds, training=False, negative_fraction=1.0, **common)
+    train_set = SIRADataset(split_names={"train"}, training=True, negative_fraction=args.negative_fraction, **common)
+    val_set = SIRADataset(split_names={"val"}, training=False, negative_fraction=1.0, **common)
     train_loader = DataLoader(train_set, batch_size=args.batch, shuffle=True, num_workers=args.workers, pin_memory=True, drop_last=True)
     val_loader = DataLoader(val_set, batch_size=args.batch, shuffle=False, num_workers=args.workers, pin_memory=True)
     device = torch.device(f"cuda:{args.device}" if str(args.device).isdigit() else args.device)
-    in_channels = 6 if args.neighbor_channel else 5
+    in_channels = 4 + int(args.context_channel) + int(args.semantic_channel) + int(args.neighbor_channel)
     encoder_weights = None if args.encoder_weights.lower() == "none" else args.encoder_weights
     model = build_refiner(args.architecture, args.encoder, encoder_weights, in_channels=in_channels).to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, args.epochs)
     scaler = torch.cuda.amp.GradScaler(enabled=device.type == "cuda")
     config = {**vars(args), "annotation_path": str(annotation), "image_dir": str(image_dir), "in_channels": in_channels,
-              "train_folds": sorted(train_folds), "val_folds": sorted(val_folds)}
+              "train_split": "train", "val_split": "val"}
     write_json(run_dir / "config.json", config); history, best = [], -1.0
     record_event(paths.artifact_root, args.run_name, "sira_train_start", {"config": config})
     for epoch in range(1, args.epochs + 1):
