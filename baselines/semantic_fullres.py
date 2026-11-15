@@ -22,6 +22,7 @@ import torchvision
 from torch.utils.data import DataLoader, Dataset
 from tqdm import tqdm
 
+from baselines.cache_io import atomic_write_bytes
 from baselines.common import (
     INPUT_SIZE,
     annotation_maps,
@@ -181,13 +182,17 @@ class FullImageDataset(Dataset):
 
     def target(self, name: str) -> np.ndarray:
         path = self.cache_root / f"{Path(name).stem}.png"
-        if not path.is_file():
-            mask = semantic_union(name, self.images, self.annotations, self.records)
-            if not cv2.imwrite(str(path), mask * 255):
-                raise OSError(f"Cannot write {path}")
-        mask = cv2.imread(str(path), cv2.IMREAD_GRAYSCALE)
+        mask = cv2.imread(str(path), cv2.IMREAD_GRAYSCALE) if path.is_file() else None
         if mask is None:
-            raise FileNotFoundError(path)
+            # A missing or legacy truncated cache entry is rebuilt. Encoding to
+            # memory plus atomic replace prevents concurrent seeds/workers from
+            # observing a partially written PNG.
+            mask = semantic_union(name, self.images, self.annotations, self.records)
+            success, encoded = cv2.imencode(".png", mask * 255)
+            if not success:
+                raise OSError(f"Cannot encode {path}")
+            atomic_write_bytes(path, encoded.tobytes())
+            return mask.astype(np.uint8)
         return (mask > 0).astype(np.uint8)
 
     def __getitem__(self, index: int):

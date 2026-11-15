@@ -6,6 +6,7 @@ import argparse
 import json
 import math
 import random
+from zipfile import BadZipFile
 from pathlib import Path
 
 import cv2
@@ -18,6 +19,7 @@ from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
 from tqdm import tqdm
 
+from baselines.cache_io import atomic_savez_compressed
 from baselines.common import (
     INPUT_SIZE,
     annotation_maps,
@@ -57,11 +59,17 @@ class ConsensusDataset(Dataset):
 
     def _masks(self, name: str) -> np.ndarray:
         path = self.cache_root / f"{Path(name).stem}.npz"
-        if not path.is_file():
-            masks = consensus_instances(name, self.images, self.annotations, self.records)
-            stacked = np.stack(masks).astype(np.uint8) if masks else np.zeros((0, INPUT_SIZE, INPUT_SIZE), np.uint8)
-            np.savez_compressed(path, masks=stacked)
-        return np.load(path)["masks"]
+        if path.is_file():
+            try:
+                with np.load(path, allow_pickle=False) as payload:
+                    return payload["masks"].copy()
+            except (OSError, ValueError, EOFError, KeyError, BadZipFile):
+                # Rebuild archives left truncated by older concurrent writers.
+                pass
+        masks = consensus_instances(name, self.images, self.annotations, self.records)
+        stacked = np.stack(masks).astype(np.uint8) if masks else np.zeros((0, INPUT_SIZE, INPUT_SIZE), np.uint8)
+        atomic_savez_compressed(path, masks=stacked)
+        return stacked
 
     def __getitem__(self, index: int):
         name = self.names[index]
