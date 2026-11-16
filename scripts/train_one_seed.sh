@@ -14,6 +14,11 @@ mkdir -p "${ARTIFACT_ROOT}/logs"
 MANIFEST="${PROJECT_ROOT}/splits/magfilo_v1/manifest.csv"
 DATA="${ARTIFACT_ROOT}/datasets/m2_lite_magfilo_v1/dataset.yaml"
 TAG="magfilo_v1_m2lite_s${SEED}"
+FINAL_RESULT="${ARTIFACT_ROOT}/results/${TAG}_val.json"
+if [[ -s "${FINAL_RESULT}" ]]; then
+  echo "[M2-Lite seed ${SEED}] validation result exists; skipping completed run"
+  exit 0
+fi
 DET="${TAG}_detector"
 SEM="${TAG}_semantic"
 SIRA="${TAG}_sira"

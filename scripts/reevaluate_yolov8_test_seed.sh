@@ -16,6 +16,11 @@ OUT="${ARTIFACT_ROOT}/results/${RUN}"
 FROZEN="${OUT}/val_best.json"
 LOG="${ARTIFACT_ROOT}/logs/yolov8_metrics_s${SEED}.log"
 
+if [[ -s "${OUT}/test_best.json" ]] && grep -q '"semantic_dice"' "${OUT}/test_best.json"; then
+  echo "[YOLO metrics seed ${SEED}] semantic test metrics exist; skipping completed run"
+  exit 0
+fi
+
 [[ -s "${BEST}" ]] || { echo "Missing checkpoint: ${BEST}" >&2; exit 1; }
 [[ -s "${FROZEN}" ]] || { echo "Missing frozen validation config: ${FROZEN}" >&2; exit 1; }
 mkdir -p "${OUT}" "$(dirname "${LOG}")"

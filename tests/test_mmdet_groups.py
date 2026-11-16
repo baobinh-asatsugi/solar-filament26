@@ -28,3 +28,21 @@ def test_mmdet_keeps_seed_without_forcing_unsupported_deterministic_kernels():
     adapter = (root / "baselines/mmdet_adapter.py").read_text()
     assert "dict(seed=args.seed, deterministic=False)" in adapter
     assert "dict(seed=args.seed, deterministic=True)" not in adapter
+
+
+def test_htc_builds_and_loads_semantic_targets():
+    root = Path(__file__).resolve().parents[1]
+    adapter = (root / "baselines/mmdet_adapter.py").read_text()
+    assert "def _prepare_semantic_targets" in adapter
+    assert 'target[mask] = 0' in adapter
+    assert 'transform["with_seg"] = True' in adapter
+    assert 'data_prefix["seg"]' in adapter
+
+
+def test_mmdet_runs_skip_completed_test_results():
+    root = Path(__file__).resolve().parents[1]
+    launcher = (root / "scripts/launch_official_baselines.sh").read_text()
+    runner = (root / "scripts/run_mmdet_seed.sh").read_text()
+    assert '[[ -s "${TEST_RESULT}" ]]' in launcher
+    assert "No pending MMDetection baselines" in launcher
+    assert '[[ -s "${OUT}/test_best.json" ]]' in runner

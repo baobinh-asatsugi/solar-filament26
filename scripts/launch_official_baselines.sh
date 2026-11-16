@@ -25,18 +25,29 @@ case "${GROUP}" in
 esac
 SEEDS=(3020 3021 3022 3023 3024)
 for GPU in 0 1 2 3; do
-  SESSION="${SESSION_PREFIX}_gpu${GPU}"; QUEUE=""
+  SESSION="${SESSION_PREFIX}_gpu${GPU}"; QUEUE=""; PENDING=0
   INDEX=0
   for MODEL in "${MODELS[@]}"; do
     for SEED in "${SEEDS[@]}"; do
       if (( INDEX % 4 == GPU )); then
+        TEST_RESULT="${ARTIFACT_ROOT}/results/baseline_magfilo_v1_${MODEL}_s${SEED}/test_best.json"
+        if [[ -s "${TEST_RESULT}" ]]; then
+          echo "Skip complete: ${MODEL} seed ${SEED} (${TEST_RESULT})"
+          INDEX=$((INDEX + 1))
+          continue
+        fi
         QUEUE+=" bash scripts/run_with_gpu_limit.sh ${GPU} ${ARTIFACT_ROOT}/logs/${MODEL}_s${SEED}.log bash scripts/run_mmdet_seed.sh ${MODEL} ${SEED} ${GPU};"
+        PENDING=$((PENDING + 1))
       fi
       INDEX=$((INDEX + 1))
     done
   done
   tmux has-session -t "${SESSION}" 2>/dev/null && { echo "Exists: ${SESSION}"; continue; }
+  if (( PENDING == 0 )); then
+    echo "No pending MMDetection baselines on GPU ${GPU}"
+    continue
+  fi
   COMMAND="source ${CONDA_SETUP}; conda activate ${CONDA_ENV}; cd ${PROJECT_ROOT}; export ARTIFACT_ROOT=${ARTIFACT_ROOT}; export DATA_ROOT=${DATA_ROOT}; export PYTHON=${PYTHON}; export PYTHONPATH=${PROJECT_ROOT}/src:${PROJECT_ROOT}; set -euo pipefail;${QUEUE}"
   tmux new-session -d -s "${SESSION}" "bash -lc '${COMMAND}'"
-  echo "Started ${SESSION}: MMDetection ${GROUP} queue on GPU ${GPU}"
+  echo "Started ${SESSION}: ${PENDING} pending MMDetection ${GROUP} runs on GPU ${GPU}"
 done

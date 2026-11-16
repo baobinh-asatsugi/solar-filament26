@@ -2,11 +2,15 @@ from __future__ import annotations
 
 import argparse
 import json
+from collections import defaultdict
 from pathlib import Path
 
+import numpy as np
 from mmengine.config import Config
 from mmengine.runner import Runner
 from mmdet.utils import register_all_modules
+from PIL import Image
+from pycocotools import mask as mask_utils
 
 from filament.checkpoint_policy import retain_only_best_checkpoint
 
@@ -94,6 +98,66 @@ def _set_input_size(value, input_size: int) -> None:
             _set_input_size(child, input_size)
 
 
+def _has_semantic_head(model) -> bool:
+    roi_head = model.get("roi_head", {}) if isinstance(model, dict) else {}
+    return isinstance(roi_head, dict) and roi_head.get("semantic_head") is not None
+
+
+def _decode_annotation_mask(segmentation, height: int, width: int) -> np.ndarray:
+    if isinstance(segmentation, list):
+        rle = mask_utils.merge(mask_utils.frPyObjects(segmentation, height, width))
+    elif isinstance(segmentation, dict) and isinstance(segmentation.get("counts"), list):
+        rle = mask_utils.frPyObjects(segmentation, height, width)
+    else:
+        rle = segmentation
+    decoded = mask_utils.decode(rle)
+    if decoded.ndim == 3:
+        decoded = decoded.any(axis=2)
+    return decoded.astype(bool)
+
+
+def _prepare_semantic_targets(annotation_path: Path, output_dir: Path) -> int:
+    """Build HTC thing maps: filament=0, unlabeled background=255."""
+    with annotation_path.open(encoding="utf-8") as handle:
+        coco = json.load(handle)
+    images_by_id = {str(item["id"]): item for item in coco["images"]}
+    image_ids_by_file: dict[str, list[str]] = defaultdict(list)
+    annotations_by_id: dict[str, list[dict]] = defaultdict(list)
+    for item in coco["images"]:
+        image_ids_by_file[item["file_name"]].append(str(item["id"]))
+    for annotation in coco["annotations"]:
+        annotations_by_id[str(annotation["image_id"])].append(annotation)
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    for file_name, image_ids in image_ids_by_file.items():
+        info = images_by_id[image_ids[0]]
+        height, width = int(info["height"]), int(info["width"])
+        target = np.full((height, width), 255, dtype=np.uint8)
+        for image_id in image_ids:
+            for annotation in annotations_by_id[image_id]:
+                mask = _decode_annotation_mask(annotation["segmentation"], height, width)
+                target[mask] = 0
+        target_path = output_dir / Path(file_name).with_suffix(".png")
+        target_path.parent.mkdir(parents=True, exist_ok=True)
+        Image.fromarray(target, mode="L").save(target_path)
+    return len(image_ids_by_file)
+
+
+def _enable_semantic_targets(value, semantic_root: Path) -> None:
+    if not isinstance(value, dict):
+        return
+    if "dataset" in value:
+        _enable_semantic_targets(value["dataset"], semantic_root)
+    if value.get("type") == "CocoDataset" or "ann_file" in value:
+        data_prefix = dict(value.get("data_prefix", {}))
+        data_prefix["seg"] = str(semantic_root.resolve())
+        value["data_prefix"] = data_prefix
+        value["seg_map_suffix"] = ".png"
+        for transform in value.get("pipeline", []):
+            if isinstance(transform, dict) and transform.get("type") == "LoadAnnotations":
+                transform["with_seg"] = True
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Dataset-only adapter for official MMDetection configs")
     parser.add_argument("--config", type=Path, required=True)
@@ -116,6 +180,11 @@ def main() -> None:
     _set_input_size(cfg.train_dataloader.dataset, args.input_size)
     _set_input_size(cfg.val_dataloader.dataset, args.input_size)
     _set_input_size(cfg.test_dataloader.dataset, args.input_size)
+    semantic_target_count = 0
+    if _has_semantic_head(cfg.model):
+        semantic_root = args.work_dir / "semantic_targets"
+        semantic_target_count = _prepare_semantic_targets(args.train_json, semantic_root)
+        _enable_semantic_targets(cfg.train_dataloader.dataset, semantic_root)
     for evaluator, annotation in ((cfg.val_evaluator, args.val_json), (cfg.test_evaluator, args.test_json)):
         if isinstance(evaluator, dict):
             evaluator["ann_file"] = str(annotation.resolve())
@@ -146,6 +215,7 @@ def main() -> None:
     (args.work_dir / "adaptation_audit.json").write_text(json.dumps({
         "upstream_config": str(args.config.resolve()), "changed_paths": changed,
         "shared_input_size": args.input_size,
+        "semantic_target_count": semantic_target_count,
         "invariant": "Only dataset/evaluator paths, one-class dimensions, the shared 2048 input size, seed/runtime, best-only checkpoint retention, and auto LR scaling may change.",
     }, indent=2) + "\n")
     cfg.dump(args.work_dir / "adapted_config.py")

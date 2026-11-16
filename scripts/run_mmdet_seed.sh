@@ -6,6 +6,11 @@ DATA_ROOT="${DATA_ROOT:-${PROJECT_ROOT}/magfilo}"; PYTHON="${PYTHON:-python}"
 export PROJECT_ROOT ARTIFACT_ROOT DATA_ROOT PYTHON
 export PYTHONPATH="${PROJECT_ROOT}/src:${PROJECT_ROOT}"; export CUDA_VISIBLE_DEVICES="${GPU}"
 UPSTREAM="${ARTIFACT_ROOT}/upstream/mmdetection-v3.3.0"
+OUT="${ARTIFACT_ROOT}/results/baseline_magfilo_v1_${MODEL}_s${SEED}"
+if [[ -s "${OUT}/test_best.json" ]]; then
+  echo "[${MODEL} seed ${SEED}] test result exists; skipping completed run"
+  exit 0
+fi
 case "${MODEL}" in
   mask_rcnn) CONFIG="configs/mask_rcnn/mask-rcnn_r50_fpn_1x_coco.py";;
   cascade_mask_rcnn) CONFIG="configs/cascade_rcnn/cascade-mask-rcnn_r50_fpn_1x_coco.py";;
@@ -23,7 +28,6 @@ WORK="${ARTIFACT_ROOT}/baseline_work/magfilo_v1/${MODEL}/seed${SEED}"; ANN="${AR
   --train-json "${ANN}/train.json" --val-json "${ANN}/val.json" --test-json "${ANN}/test.json" \
   --image-root "${IMAGE_ROOT}" --work-dir "${WORK}" --seed "${SEED}"
 CHECKPOINT="$(cat "${WORK}/best_checkpoint")"; [[ "${CHECKPOINT}" = /* ]] || CHECKPOINT="${WORK}/${CHECKPOINT}"
-OUT="${ARTIFACT_ROOT}/results/baseline_magfilo_v1_${MODEL}_s${SEED}"
 "${PYTHON}" "${PROJECT_ROOT}/baselines/eval_mmdet_pq.py" --config "${WORK}/adapted_config.py" --checkpoint "${CHECKPOINT}" \
   --manifest "${PROJECT_ROOT}/splits/magfilo_v1/manifest.csv" --split val --data-root "${DATA_ROOT}" \
   --artifact-root "${ARTIFACT_ROOT}" --device cuda:0 --output-dir "${OUT}"
