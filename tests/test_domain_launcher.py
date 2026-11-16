@@ -9,6 +9,10 @@ def test_domain_launcher_skips_completed_test_results():
     assert "baseline_magfilo_v1_${METHOD}_s${SEED}/test_best.json" in text
     assert '[[ -s "${TEST_RESULT}" ]]' in text
     assert "No pending domain baselines" in text
+    assert "[domain queue] FAILED:" in text
+    assert "[domain queue] FINISHED:" in text
+    assert "remain-on-exit on" in text
+    assert "Removing finished/dead session" in text
 
 
 def test_domain_runners_are_independently_idempotent():

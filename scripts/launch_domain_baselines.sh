@@ -21,18 +21,27 @@ for GPU in 0 1 2 3; do
           maskrcnn_consensus) SCRIPT="scripts/run_maskrcnn_consensus_seed.sh";;
           detr_crop_unet) SCRIPT="scripts/run_detr_crop_unet_seed.sh";;
         esac
-        QUEUE+=" bash scripts/run_with_gpu_limit.sh ${GPU} ${ARTIFACT_ROOT}/logs/${METHOD}_s${SEED}.log bash ${SCRIPT} ${SEED} ${GPU};"
+        QUEUE+=" if ! bash scripts/run_with_gpu_limit.sh ${GPU} ${ARTIFACT_ROOT}/logs/${METHOD}_s${SEED}.log bash ${SCRIPT} ${SEED} ${GPU}; then echo '[domain queue] FAILED: ${METHOD} seed ${SEED} on GPU ${GPU}'; fi;"
         PENDING=$((PENDING + 1))
       fi
       INDEX=$((INDEX + 1))
     done
   done
-  tmux has-session -t "${SESSION}" 2>/dev/null && { echo "Exists: ${SESSION}"; continue; }
+  if tmux has-session -t "${SESSION}" 2>/dev/null; then
+    if [[ "$(tmux display-message -p -t "${SESSION}" '#{pane_dead}')" == "1" ]]; then
+      echo "Removing finished/dead session: ${SESSION}"
+      tmux kill-session -t "${SESSION}"
+    else
+      echo "Exists and running: ${SESSION}"
+      continue
+    fi
+  fi
   if (( PENDING == 0 )); then
     echo "No pending domain baselines on GPU ${GPU}"
     continue
   fi
-  COMMAND="source ${CONDA_SETUP}; conda activate ${CONDA_ENV}; cd ${PROJECT_ROOT}; export ARTIFACT_ROOT=${ARTIFACT_ROOT}; export DATA_ROOT=${DATA_ROOT}; export PYTHON=${PYTHON}; export PYTHONPATH=${PROJECT_ROOT}/src:${PROJECT_ROOT}; set -euo pipefail;${QUEUE}"
+  COMMAND="source ${CONDA_SETUP}; conda activate ${CONDA_ENV}; cd ${PROJECT_ROOT}; export ARTIFACT_ROOT=${ARTIFACT_ROOT}; export DATA_ROOT=${DATA_ROOT}; export PYTHON=${PYTHON}; export PYTHONPATH=${PROJECT_ROOT}/src:${PROJECT_ROOT}; set -u -o pipefail;${QUEUE} echo '[domain queue] FINISHED: GPU ${GPU}'"
   tmux new-session -d -s "${SESSION}" "bash -lc '${COMMAND}'"
+  tmux set-option -t "${SESSION}" remain-on-exit on
   echo "Started ${SESSION}: ${PENDING} pending domain-baseline runs on GPU ${GPU}"
 done
