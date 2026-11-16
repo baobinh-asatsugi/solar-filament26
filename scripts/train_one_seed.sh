@@ -23,40 +23,71 @@ DET="${TAG}_detector"
 SEM="${TAG}_semantic"
 SIRA="${TAG}_sira"
 SELECTOR="${TAG}_selector"
+DET_BEST="${ARTIFACT_ROOT}/runs/${DET}/weights/best.pt"
+SEM_BEST="${ARTIFACT_ROOT}/runs/${SEM}/best.pt"
+SIRA_BEST="${ARTIFACT_ROOT}/runs/${SIRA}/best.pt"
+SIRA_COMPLETE="${ARTIFACT_ROOT}/runs/${SIRA}/train_complete.json"
+SELECTOR_DIR="${ARTIFACT_ROOT}/results/${SELECTOR}"
+PREDICTION_ROOT="${ARTIFACT_ROOT}/predictions/${TAG}"
+SIRA_BATCH="${SIRA_BATCH:-2}"
+REFINE_BATCH="${REFINE_BATCH:-2}"
 
-"${PYTHON}" -m filament.train --run-name "${DET}" --model yolov8l-seg.pt --data-yaml "${DATA}" \
-  --imgsz 2048 --epochs 30 --batch 1 --workers 6 --device "${GPU}" --seed "${SEED}" \
-  --mosaic 0 --mixup 0 --translate 0 --scale 0.1 --fliplr 0.5 --flipud 0.5 --close-mosaic 0
+if [[ -s "${DET_BEST}" ]]; then
+  echo "[M2-Lite seed ${SEED}] detector checkpoint exists; skipping YOLO training"
+else
+  "${PYTHON}" -m filament.train --run-name "${DET}" --model yolov8l-seg.pt --data-yaml "${DATA}" \
+    --imgsz 2048 --epochs 30 --batch 1 --workers 6 --device "${GPU}" --seed "${SEED}" \
+    --mosaic 0 --mixup 0 --translate 0 --scale 0.1 --fliplr 0.5 --flipud 0.5 --close-mosaic 0
+fi
 
-"${PYTHON}" -m filament.train_semantic --run-name "${SEM}" --manifest "${MANIFEST}" \
-  --architecture unetplusplus --encoder efficientnet-b3 --feature-mode radial \
-  --annotation-strategy medoid --val-annotation-strategy duplicate --tile-size 768 \
-  --train-samples 4000 --val-samples 1200 --positive-fraction 0.75 --epochs 20 \
-  --batch 2 --workers 6 --centerline-weight 0.1 --skeleton-recall-weight 0.2 \
-  --device "${GPU}" --seed "${SEED}"
+if [[ -s "${SEM_BEST}" ]]; then
+  echo "[M2-Lite seed ${SEED}] semantic checkpoint exists; skipping semantic training"
+else
+  "${PYTHON}" -m filament.train_semantic --run-name "${SEM}" --manifest "${MANIFEST}" \
+    --architecture unetplusplus --encoder efficientnet-b3 --feature-mode radial \
+    --annotation-strategy medoid --val-annotation-strategy duplicate --tile-size 768 \
+    --train-samples 4000 --val-samples 1200 --positive-fraction 0.75 --epochs 20 \
+    --batch 2 --workers 6 --centerline-weight 0.1 --skeleton-recall-weight 0.2 \
+    --device "${GPU}" --seed "${SEED}"
+fi
 
 for SPLIT in train val test; do
-  "${PYTHON}" -m filament.predict_split --manifest "${MANIFEST}" --split "${SPLIT}" --run-name "${TAG}" \
-    --detector "${ARTIFACT_ROOT}/runs/${DET}/weights/best.pt" \
-    --semantic "${ARTIFACT_ROOT}/runs/${SEM}/best.pt" --device "${GPU}"
+  if "${PYTHON}" -m filament.pipeline_state --manifest "${MANIFEST}" --prediction-root "${PREDICTION_ROOT}" --split "${SPLIT}" --stage prediction; then
+    echo "[M2-Lite seed ${SEED}] ${SPLIT} prediction cache complete; skipping"
+  else
+    "${PYTHON}" -m filament.predict_split --manifest "${MANIFEST}" --split "${SPLIT}" --run-name "${TAG}" \
+      --detector "${DET_BEST}" --semantic "${SEM_BEST}" --device "${GPU}"
+    "${PYTHON}" -m filament.pipeline_state --manifest "${MANIFEST}" --prediction-root "${PREDICTION_ROOT}" --split "${SPLIT}" --stage prediction
+  fi
 done
 
-"${PYTHON}" -m filament.train_sira --run-name "${SIRA}" --manifest "${MANIFEST}" \
-  --bank-root "${ARTIFACT_ROOT}/predictions/${TAG}/raw" \
-  --semantic-root "${ARTIFACT_ROOT}/predictions/${TAG}/semantic" \
-  --crop-size 512 --architecture unet --encoder resnet34 --semantic-channel \
-  --epochs 25 --batch 4 --workers 6 --device "${GPU}" --seed "${SEED}"
+if [[ -s "${SIRA_COMPLETE}" && -s "${SIRA_BEST}" ]]; then
+  echo "[M2-Lite seed ${SEED}] SIRA training complete; skipping"
+else
+  "${PYTHON}" -m filament.train_sira --run-name "${SIRA}" --manifest "${MANIFEST}" \
+    --bank-root "${PREDICTION_ROOT}/raw" --semantic-root "${PREDICTION_ROOT}/semantic" \
+    --crop-size 512 --architecture unet --encoder resnet34 --semantic-channel \
+    --epochs 25 --batch "${SIRA_BATCH}" --workers 6 --device "${GPU}" --seed "${SEED}" --resume
+fi
 
 for SPLIT in train val test; do
-  "${PYTHON}" -m filament.refine_split --manifest "${MANIFEST}" --split "${SPLIT}" --run-name "${TAG}" \
-    --checkpoint "${ARTIFACT_ROOT}/runs/${SIRA}/best.pt" --device "${GPU}" --batch 4
+  if "${PYTHON}" -m filament.pipeline_state --manifest "${MANIFEST}" --prediction-root "${PREDICTION_ROOT}" --split "${SPLIT}" --stage refined; then
+    echo "[M2-Lite seed ${SEED}] ${SPLIT} refined cache complete; skipping"
+  else
+    "${PYTHON}" -m filament.refine_split --manifest "${MANIFEST}" --split "${SPLIT}" --run-name "${TAG}" \
+      --checkpoint "${SIRA_BEST}" --device "${GPU}" --batch "${REFINE_BATCH}"
+    "${PYTHON}" -m filament.pipeline_state --manifest "${MANIFEST}" --prediction-root "${PREDICTION_ROOT}" --split "${SPLIT}" --stage refined
+  fi
 done
 
-"${PYTHON}" -m filament.train_selector --manifest "${MANIFEST}" --run-name "${SELECTOR}" \
-  --prediction-run "${TAG}" --seed "${SEED}"
+if [[ -s "${SELECTOR_DIR}/quality.joblib" && -s "${SELECTOR_DIR}/best_decoder.json" ]]; then
+  echo "[M2-Lite seed ${SEED}] selector result exists; skipping selector training"
+else
+  "${PYTHON}" -m filament.train_selector --manifest "${MANIFEST}" --run-name "${SELECTOR}" \
+    --prediction-run "${TAG}" --seed "${SEED}"
+fi
 
 "${PYTHON}" -m filament.evaluate_lite --manifest "${MANIFEST}" --split val --prediction-run "${TAG}" \
-  --selector-dir "${ARTIFACT_ROOT}/results/${SELECTOR}" \
-  --output "${ARTIFACT_ROOT}/results/${TAG}_val.json"
+  --selector-dir "${SELECTOR_DIR}" --output "${FINAL_RESULT}"
 
 echo "Seed ${SEED} complete. Validate first; final test remains locked."

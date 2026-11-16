@@ -52,14 +52,15 @@ def main() -> None:
     parser.add_argument("--batch", type=int, default=4); parser.add_argument("--workers", type=int, default=6)
     parser.add_argument("--lr", type=float, default=3e-4); parser.add_argument("--weight-decay", type=float, default=1e-4)
     parser.add_argument("--device", default="0"); parser.add_argument("--seed", type=int, default=3020)
+    parser.add_argument("--resume", action="store_true")
     args = parser.parse_args()
     if args.exclusion_weight > 0 and not args.neighbor_channel:
         raise ValueError("M3 exclusion requires --neighbor-channel")
     random.seed(args.seed); np.random.seed(args.seed); torch.manual_seed(args.seed); torch.cuda.manual_seed_all(args.seed)
     paths = paths_from_args(args); annotation, image_dir, _ = discover_data(paths)
     run_dir = paths.run_dir(args.run_name)
-    if run_dir.exists(): raise FileExistsError(run_dir)
-    run_dir.mkdir(parents=True)
+    if run_dir.exists() and not args.resume: raise FileExistsError(run_dir)
+    run_dir.mkdir(parents=True, exist_ok=args.resume)
     common = dict(annotation_path=annotation, image_dir=image_dir, manifest_path=args.manifest.resolve(),
                   bank_root=args.bank_root.resolve(), crop_size=args.crop_size, annotation_strategy=args.annotation_strategy,
                   semantic_root=args.semantic_root.resolve() if args.semantic_root else None,
@@ -79,9 +80,27 @@ def main() -> None:
     scaler = torch.cuda.amp.GradScaler(enabled=device.type == "cuda")
     config = {**vars(args), "annotation_path": str(annotation), "image_dir": str(image_dir), "in_channels": in_channels,
               "train_split": "train", "val_split": "val"}
-    write_json(run_dir / "config.json", config); history, best = [], -1.0
+    history, best, start_epoch = [], -1.0, 1
+    resume_checkpoint = run_dir / "best.pt"
+    if args.resume and resume_checkpoint.is_file():
+        payload = torch.load(resume_checkpoint, map_location="cpu")
+        model.load_state_dict(payload["model"])
+        if "optimizer" in payload: optimizer.load_state_dict(payload["optimizer"])
+        if "scheduler" in payload: scheduler.load_state_dict(payload["scheduler"])
+        if "scaler" in payload: scaler.load_state_dict(payload["scaler"])
+        resumed_epoch = int(payload.get("epoch", 0))
+        start_epoch = resumed_epoch + 1
+        best = float(payload.get("metrics", {}).get("dice", -1.0))
+        history_path = run_dir / "history.json"
+        if history_path.is_file():
+            previous = json.loads(history_path.read_text()).get("epochs", [])
+            history = [row for row in previous if int(row.get("epoch", 0)) <= resumed_epoch]
+        print(f"Resuming SIRA from {resume_checkpoint} at epoch {start_epoch}/{args.epochs}")
+    elif args.resume:
+        print(f"No usable SIRA checkpoint in {run_dir}; restarting this stage from epoch 1")
+    write_json(run_dir / "config.json", config)
     record_event(paths.artifact_root, args.run_name, "sira_train_start", {"config": config})
-    for epoch in range(1, args.epochs + 1):
+    for epoch in range(start_epoch, args.epochs + 1):
         model.train(); running = 0.0
         progress = tqdm(train_loader, desc=f"SIRA {epoch}/{args.epochs}")
         for batch in progress:
@@ -95,10 +114,16 @@ def main() -> None:
             progress.set_postfix(loss=f"{float(loss):.4f}")
         scheduler.step(); metrics = validate(model, val_loader, device, args.exclusion_weight)
         row = {"epoch": epoch, "train_loss": running / max(len(train_loader), 1), **metrics}; history.append(row); print(json.dumps(row))
-        checkpoint = {"model": model.state_dict(), "config": config, "epoch": epoch, "metrics": metrics}
+        checkpoint = {
+            "model": model.state_dict(), "config": config, "epoch": epoch, "metrics": metrics,
+            "optimizer": optimizer.state_dict(), "scheduler": scheduler.state_dict(), "scaler": scaler.state_dict(),
+        }
         if metrics["dice"] > best: best = metrics["dice"]; torch.save(checkpoint, run_dir / "best.pt")
         write_json(run_dir / "history.json", {"epochs": history, "best_candidate_dice": best})
     record_event(paths.artifact_root, args.run_name, "sira_train_complete", {"best_candidate_dice": best})
+    write_json(run_dir / "train_complete.json", {
+        "best_checkpoint": str(run_dir / "best.pt"), "best_candidate_dice": best, "epochs": args.epochs,
+    })
     print(f"Best candidate checkpoint: {run_dir / 'best.pt'}; run evaluate_sira for official pooled PQ")
 
 
