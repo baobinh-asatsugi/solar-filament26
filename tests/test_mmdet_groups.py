@@ -34,6 +34,8 @@ def test_htc_builds_and_loads_semantic_targets():
     root = Path(__file__).resolve().parents[1]
     adapter = (root / "baselines/mmdet_adapter.py").read_text()
     assert "def _prepare_semantic_targets" in adapter
+    assert 'semantic_head["num_classes"] = 2' in adapter
+    assert "target = np.ones" in adapter
     assert 'target[mask] = 0' in adapter
     assert 'transform["with_seg"] = True' in adapter
     assert 'data_prefix["seg"]' in adapter

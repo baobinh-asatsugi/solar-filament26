@@ -103,6 +103,14 @@ def _has_semantic_head(model) -> bool:
     return isinstance(roi_head, dict) and roi_head.get("semantic_head") is not None
 
 
+def _configure_semantic_head(model) -> None:
+    """Use filament/background semantics while keeping instance heads one-class."""
+    roi_head = model.get("roi_head", {})
+    semantic_head = roi_head.get("semantic_head") if isinstance(roi_head, dict) else None
+    if isinstance(semantic_head, dict):
+        semantic_head["num_classes"] = 2
+
+
 def _decode_annotation_mask(segmentation, height: int, width: int) -> np.ndarray:
     if isinstance(segmentation, list):
         rle = mask_utils.merge(mask_utils.frPyObjects(segmentation, height, width))
@@ -117,7 +125,7 @@ def _decode_annotation_mask(segmentation, height: int, width: int) -> np.ndarray
 
 
 def _prepare_semantic_targets(annotation_path: Path, output_dir: Path) -> int:
-    """Build HTC thing maps: filament=0, unlabeled background=255."""
+    """Build HTC context maps: filament=0 and background=1."""
     with annotation_path.open(encoding="utf-8") as handle:
         coco = json.load(handle)
     images_by_id = {str(item["id"]): item for item in coco["images"]}
@@ -132,7 +140,7 @@ def _prepare_semantic_targets(annotation_path: Path, output_dir: Path) -> int:
     for file_name, image_ids in image_ids_by_file.items():
         info = images_by_id[image_ids[0]]
         height, width = int(info["height"]), int(info["width"])
-        target = np.full((height, width), 255, dtype=np.uint8)
+        target = np.ones((height, width), dtype=np.uint8)
         for image_id in image_ids:
             for annotation in annotations_by_id[image_id]:
                 mask = _decode_annotation_mask(annotation["segmentation"], height, width)
@@ -174,6 +182,8 @@ def main() -> None:
     cfg = Config.fromfile(args.config.resolve())
     original = cfg.to_dict()
     _set_num_classes(cfg.model)
+    if _has_semantic_head(cfg.model):
+        _configure_semantic_head(cfg.model)
     _set_dataset(cfg.train_dataloader.dataset, ann_file=str(args.train_json.resolve()), image_root=str(args.image_root.resolve()))
     _set_dataset(cfg.val_dataloader.dataset, ann_file=str(args.val_json.resolve()), image_root=str(args.image_root.resolve()))
     _set_dataset(cfg.test_dataloader.dataset, ann_file=str(args.test_json.resolve()), image_root=str(args.image_root.resolve()))
