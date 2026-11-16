@@ -28,3 +28,6 @@ def test_one_seed_runner_skips_completed_stages_and_resumes_sira():
     assert '"${SIRA_COMPLETE}"' in text
     assert "--resume" in text
     assert 'SIRA_BATCH="${SIRA_BATCH:-2}"' in text
+    launcher = (ROOT / "scripts/launch_five_seeds_tmux.sh").read_text()
+    assert 'export SIRA_BATCH=${SIRA_BATCH}' in launcher
+    assert 'export REFINE_BATCH=${REFINE_BATCH}' in launcher
