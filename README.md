@@ -213,7 +213,7 @@ default relative to `$HOME`, so on the project account they resolve to:
 
 ```text
 $HOME/ml26                 code
-$HOME/datasets/magfilom    MAGFiLO data
+$HOME/datasets/magfilo     MAGFiLO data
 $HOME/.venv                Python virtual environment
 $HOME/ml26/outputs         checkpoints, caches, logs, and results
 ```
@@ -225,7 +225,7 @@ access). The MMDetection checkout is pinned under the artifact root:
 cd "$HOME/ml26"
 source "$HOME/.venv/bin/activate"
 export PROJECT_ROOT="$HOME/ml26"
-export DATA_ROOT="$HOME/datasets/magfilom"
+export DATA_ROOT="$HOME/datasets/magfilo"
 export ARTIFACT_ROOT="$HOME/ml26/outputs"
 export VENV_PATH="$HOME/.venv"
 bash scripts/prepare_cecs.sh

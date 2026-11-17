@@ -35,7 +35,8 @@ def test_cecs_defaults_resolve_requested_home_layout_without_identity_literals()
     for relative in ("jobs/cecs_method.sbatch", "scripts/prepare_cecs.sh", "scripts/submit_cecs_all.sh"):
         text = (ROOT / relative).read_text()
         assert "${HOME}/ml26" in text
-        assert "${HOME}/datasets/magfilom" in text
+        assert "${HOME}/datasets/magfilo" in text
+        assert "magfilom" not in text
         assert "${HOME}/.venv" in text
         assert "/mnt/users/24mai.tp" not in text
         assert "ml26_artifacts" not in text

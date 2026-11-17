@@ -11,7 +11,7 @@
 set -uo pipefail
 METHOD="${METHOD:?submit with --export=ALL,METHOD=...}"
 PROJECT_ROOT="${PROJECT_ROOT:-${HOME}/ml26}"
-DATA_ROOT="${DATA_ROOT:-${HOME}/datasets/magfilom}"
+DATA_ROOT="${DATA_ROOT:-${HOME}/datasets/magfilo}"
 ARTIFACT_ROOT="${ARTIFACT_ROOT:-${PROJECT_ROOT}/outputs}"
 VENV_PATH="${VENV_PATH:-${HOME}/.venv}"
 export PROJECT_ROOT DATA_ROOT ARTIFACT_ROOT VENV_PATH
