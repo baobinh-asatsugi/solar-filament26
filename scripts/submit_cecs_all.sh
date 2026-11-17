@@ -36,11 +36,20 @@ fi
 job_ids=()
 previous_job=""
 HEAVY_METHODS=(cascade_mask_rcnn htc queryinst mask2former)
+LONG_METHODS=(m2_lite cascade_mask_rcnn htc queryinst mask2former)
 is_heavy() {
   local candidate="$1"
   local heavy
   for heavy in "${HEAVY_METHODS[@]}"; do
     [[ "${candidate}" == "${heavy}" ]] && return 0
+  done
+  return 1
+}
+is_long() {
+  local candidate="$1"
+  local long_method
+  for long_method in "${LONG_METHODS[@]}"; do
+    [[ "${candidate}" == "${long_method}" ]] && return 0
   done
   return 1
 }
@@ -51,14 +60,18 @@ for method in "${METHODS[@]}"; do
   if is_heavy "${method}"; then
     array_spec="0-4%2"
     seeds_per_gpu=1
-    time_limit="08:00:00"
     echo "Resource policy ${method}: heavy, 1 seed/GPU, 2 GPUs, mem=16G/task"
   else
     array_spec="0-1%2"
     seeds_per_gpu=2
-    time_limit="04:00:00"
     echo "Resource policy ${method}: standard, 2 seeds/GPU, 2 GPUs, mem=16G/task"
   fi
+  if is_long "${method}"; then
+    time_limit="12:00:00"
+  else
+    time_limit="08:00:00"
+  fi
+  echo "Time policy ${method}: ${time_limit}"
   submit_args=(
     --parsable "${dependency_args[@]}" --job-name="ml26-${method}"
     --array="${array_spec}" --cpus-per-task=4 --mem=16G --time="${time_limit}"

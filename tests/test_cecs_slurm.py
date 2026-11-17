@@ -16,7 +16,7 @@ def test_cecs_job_runs_two_seeds_per_gpu_with_two_gpu_quota():
     assert 'M2_WORKERS="${M2_WORKERS:-1}"' in job
     assert "#SBATCH --cpus-per-task=4" in job
     assert "#SBATCH --mem=16G" in job
-    assert "#SBATCH --time=04:00:00" in job
+    assert "#SBATCH --time=08:00:00" in job
     assert 'SEEDS_PER_GPU="${SEEDS_PER_GPU:-2}"' in job
     assert 'seeds=("$((3020 + SLURM_ARRAY_TASK_ID))")' in job
 
@@ -33,10 +33,13 @@ def test_cecs_submission_covers_ours_and_fourteen_baselines_sequentially():
     assert 'afterany:${previous_job}' in submit
     assert 'METHODS=("$@")' in submit
     assert 'HEAVY_METHODS=(cascade_mask_rcnn htc queryinst mask2former)' in submit
+    assert 'LONG_METHODS=(m2_lite cascade_mask_rcnn htc queryinst mask2former)' in submit
     assert 'array_spec="0-1%2"' in submit
     assert 'array_spec="0-4%2"' in submit
     assert 'seeds_per_gpu=2' in submit
     assert '--mem=16G' in submit
+    assert 'time_limit="12:00:00"' in submit
+    assert 'time_limit="08:00:00"' in submit
     assert "Recovered accepted job after submit timeout" in submit
 
 
