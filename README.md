@@ -292,13 +292,13 @@ bash scripts/submit_cecs_all.sh rtmdet_ins
 Standard methods use Slurm array `0-1%2`: each task requests one GPU, four CPUs,
 and 16 GB host RAM, and runs two seeds concurrently. Thus `3020+3021` run on
 the first GPU and `3022+3023` on the second (four simultaneous seeds); seed
-`3024` follows on the first. GPU-heavy methods (`cascade_mask_rcnn`, `htc`,
-`queryinst`, and `mask2former`) instead use array `0-4%2`, one seed per GPU and
+`3024` follows on the first. Memory/GPU-heavy methods (`maskrcnn_consensus`,
+`cascade_mask_rcnn`, `htc`, `queryinst`, and `mask2former`) instead use array `0-4%2`, one seed per GPU and
 at most two simultaneous seeds. Method jobs are dependency-chained, so only one
 method occupies the two-GPU quota at a time. To test selected methods:
 
 Every method receives at least eight hours per array task. `m2_lite` and the
-four GPU-heavy MMDetection methods receive twelve hours; all other methods
+five heavy methods receive twelve hours; all other methods
 receive eight hours. The time limit covers both the initial seed pair and the
 subsequent seed `3024` on standard task zero.
 

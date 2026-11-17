@@ -35,8 +35,8 @@ if (( $# > 0 )); then
 fi
 job_ids=()
 previous_job=""
-HEAVY_METHODS=(cascade_mask_rcnn htc queryinst mask2former)
-LONG_METHODS=(m2_lite cascade_mask_rcnn htc queryinst mask2former)
+HEAVY_METHODS=(maskrcnn_consensus cascade_mask_rcnn htc queryinst mask2former)
+LONG_METHODS=(m2_lite maskrcnn_consensus cascade_mask_rcnn htc queryinst mask2former)
 is_heavy() {
   local candidate="$1"
   local heavy

@@ -25,11 +25,16 @@ from baselines.common import (
     annotation_maps,
     consensus_instances,
     load_problem,
-    pooled_pq,
-    resolve_scored_masks,
     write_result,
 )
-from filament.postprocess import mask_to_rle_object
+from filament.postprocess import (
+    accumulate_metric_record,
+    finalize_metric_totals,
+    mask_to_rle_object,
+    metric_totals,
+    polygon_to_rle,
+    pq_stats_rle,
+)
 
 
 def build_model(pretrained: bool):
@@ -141,6 +146,29 @@ def aligned(mask: np.ndarray, shift: int, erode: bool) -> np.ndarray:
     return mask
 
 
+def resolve_aligned_rles(items, score_threshold: float, min_area: int, shift: int, erode: bool):
+    occupied = np.zeros((INPUT_SIZE, INPUT_SIZE), dtype=bool)
+    output = []
+    for score, encoded in sorted(items, key=lambda pair: -pair[0]):
+        if score < score_threshold:
+            continue
+        source = mask_utils.decode(encoded).astype(bool)
+        mask = source & ~occupied
+        del source
+        count, labels, stats, _ = cv2.connectedComponentsWithStats(mask.astype(np.uint8), connectivity=8)
+        if count > 2:
+            index = 1 + int(np.argmax(stats[1:, cv2.CC_STAT_AREA]))
+            mask = labels == index
+        del labels, stats
+        if int(mask.sum()) < min_area:
+            continue
+        occupied |= mask
+        adjusted = aligned(mask, shift, erode)
+        output.append(mask_to_rle_object(adjusted))
+        del mask, adjusted
+    return output
+
+
 def tune(coco, records, cache, frozen=None):
     configs = [
         (score, area, shift, erode)
@@ -151,19 +179,29 @@ def tune(coco, records, cache, frozen=None):
     if frozen:
         configs = [(float(frozen["score_threshold"]), int(frozen["min_area"]),
                     int(frozen["shift"]), bool(frozen["erode"]))]
+    images, annotations, _ = annotation_maps(coco)
+    records_by_name = {
+        name: list(group.itertuples(index=False)) for name, group in records.groupby("file_name")
+    }
+    ground_truth_by_name = {}
+    for name, record_rows in records_by_name.items():
+        ground_truth_by_name[name] = []
+        for row in record_rows:
+            info = images[str(row.image_id)]
+            ground_truth_by_name[name].append([
+                polygon_to_rle(item["segmentation"], int(info["height"]), int(info["width"]))
+                for item in annotations[str(row.image_id)]
+            ])
     rows = []
     for score, area, shift, erode in tqdm(configs, desc="Mask R-CNN PQ grid"):
-        predictions = {
-            name: [
-                aligned(mask, shift, erode)
-                for mask in resolve_scored_masks(
-                    [(value, mask_utils.decode(rle).astype(bool)) for value, rle in items], score, area
-                )
-            ]
-            for name, items in cache.items()
-        }
+        totals = metric_totals()
+        for name, items in cache.items():
+            prediction_rles = resolve_aligned_rles(items, score, area, shift, erode)
+            for ground_truth in ground_truth_by_name.get(name, []):
+                accumulate_metric_record(totals, pq_stats_rle(ground_truth, prediction_rles))
+            del prediction_rles
         rows.append({"score_threshold": score, "min_area": area, "shift": shift, "erode": erode,
-                     **pooled_pq(coco, records, predictions)})
+                     **finalize_metric_totals(totals)})
     import pandas as pd
     return pd.DataFrame(rows).sort_values("global_pq", ascending=False)
 
@@ -180,6 +218,7 @@ def main() -> None:
     parser.add_argument("--workers", type=int, default=2)
     parser.add_argument("--split", choices=("val", "test"), default="val")
     parser.add_argument("--frozen-config", type=Path)
+    parser.add_argument("--resume", action="store_true")
     args = parser.parse_args()
     random.seed(args.seed); np.random.seed(args.seed); torch.manual_seed(args.seed); torch.cuda.manual_seed_all(args.seed)
     device = torch.device(f"cuda:{args.device}" if torch.cuda.is_available() and args.device != "cpu" else "cpu")
@@ -189,7 +228,14 @@ def main() -> None:
     result_dir = args.artifact_root / "results" / f"baseline_magfilo_v1_maskrcnn_consensus_s{args.seed}"
     run_dir.mkdir(parents=True, exist_ok=True); result_dir.mkdir(parents=True, exist_ok=True)
     checkpoint = run_dir / "best.pt"
-    model = build_model(pretrained=args.command == "train").to(device)
+    last_checkpoint = run_dir / "last.pt"
+    resume_checkpoint = None
+    if args.command == "train" and args.resume:
+        if last_checkpoint.is_file():
+            resume_checkpoint = last_checkpoint
+        elif checkpoint.is_file():
+            resume_checkpoint = checkpoint
+    model = build_model(pretrained=args.command == "train" and resume_checkpoint is None).to(device)
 
     if args.command == "train":
         training = ConsensusDataset(args.data_root, manifest, coco, "train", cache_root, True)
@@ -199,8 +245,16 @@ def main() -> None:
         optimizer = torch.optim.AdamW([p for p in model.parameters() if p.requires_grad], lr=1e-4, weight_decay=1e-4)
         accumulation = 8  # upstream effective batch: batch 2 x four accumulated steps
         total_steps = args.epochs * max(math.ceil(len(loader) / accumulation), 1)
-        step = 0; best = -1.0
-        for epoch in range(1, args.epochs + 1):
+        step = 0; best = -1.0; start_epoch = 1
+        if resume_checkpoint is not None:
+            payload = torch.load(resume_checkpoint, map_location="cpu", weights_only=False)
+            model.load_state_dict(payload["model"])
+            start_epoch = int(payload.get("epoch", 0)) + 1
+            step = int(payload.get("step", 0)); best = float(payload.get("best_pq", -1.0))
+            if "optimizer" in payload:
+                optimizer.load_state_dict(payload["optimizer"])
+            print(f"Resuming maskrcnn_consensus from {resume_checkpoint} at epoch {start_epoch}/{args.epochs}")
+        for epoch in range(start_epoch, args.epochs + 1):
             model.train(); running = 0.0; optimizer.zero_grad(set_to_none=True)
             for batch_index, (images, targets, _) in enumerate(
                 tqdm(loader, desc=f"maskrcnn consensus {epoch}/{args.epochs}"), start=1
@@ -219,15 +273,30 @@ def main() -> None:
                         group["lr"] = 1e-4 * factor
                     torch.nn.utils.clip_grad_norm_(model.parameters(), 5.0)
                     optimizer.step(); optimizer.zero_grad(set_to_none=True); step += 1
+            torch.save({
+                "model": model.state_dict(), "optimizer": optimizer.state_dict(),
+                "epoch": epoch, "step": step, "best_pq": best,
+                "seed": args.seed, "input_size": INPUT_SIZE,
+            }, last_checkpoint)
             if epoch >= 8 and (epoch % 2 == 0 or epoch == args.epochs):
                 val_cache = inference(model, validation, device)
-                ranking = tune(coco, manifest[manifest["split"] == "val"], val_cache)
+                ranking = tune(
+                    coco, manifest[manifest["split"] == "val"], val_cache,
+                    frozen={"score_threshold": 0.5, "min_area": 300, "shift": 0, "erode": False},
+                )
                 score = float(ranking.iloc[0]["global_pq"])
                 print(f"epoch={epoch} loss={running/max(len(loader),1):.5f} val_pq={score:.6f}")
                 if score > best:
                     best = score
                     torch.save({"model": model.state_dict(), "epoch": epoch, "seed": args.seed,
-                                "input_size": INPUT_SIZE}, checkpoint)
+                                "input_size": INPUT_SIZE, "val_pq": best}, checkpoint)
+                del val_cache, ranking
+            torch.save({
+                "model": model.state_dict(), "optimizer": optimizer.state_dict(),
+                "epoch": epoch, "step": step, "best_pq": best,
+                "seed": args.seed, "input_size": INPUT_SIZE,
+            }, last_checkpoint)
+        last_checkpoint.unlink(missing_ok=True)
         return
 
     payload = torch.load(checkpoint, map_location=device)

@@ -12,6 +12,6 @@ if [[ -s "${RESULT}/test_best.json" ]]; then
   exit 0
 fi
 COMMON=(--data-root "${DATA_ROOT}" --manifest "${MANIFEST}" --artifact-root "${ARTIFACT_ROOT}" --seed "${SEED}" --device "${GPU}")
-"${PYTHON}" "${PROJECT_ROOT}/baselines/maskrcnn_consensus.py" train "${COMMON[@]}"
+"${PYTHON}" "${PROJECT_ROOT}/baselines/maskrcnn_consensus.py" train "${COMMON[@]}" --resume
 "${PYTHON}" "${PROJECT_ROOT}/baselines/maskrcnn_consensus.py" eval "${COMMON[@]}" --split val
 "${PYTHON}" "${PROJECT_ROOT}/baselines/maskrcnn_consensus.py" eval "${COMMON[@]}" --split test --frozen-config "${RESULT}/val_best.json"

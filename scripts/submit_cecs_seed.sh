@@ -16,8 +16,8 @@ mkdir -p "${ARTIFACT_ROOT}/logs" "${PROJECT_ROOT}/slurm_logs"
 "${PYTHON}" "${PROJECT_ROOT}/scripts/check_cecs_env.py"
 
 case "${METHOD}" in
-  m2_lite|cascade_mask_rcnn|htc|queryinst|mask2former) TIME_LIMIT="12:00:00" ;;
-  yolov8l|unetpp_watershed|fullres_unet|edgeattnet|maskrcnn_consensus|detr_crop_unet|mask_rcnn|solov2|condinst|rtmdet_ins) TIME_LIMIT="08:00:00" ;;
+  m2_lite|maskrcnn_consensus|cascade_mask_rcnn|htc|queryinst|mask2former) TIME_LIMIT="12:00:00" ;;
+  yolov8l|unetpp_watershed|fullres_unet|edgeattnet|detr_crop_unet|mask_rcnn|solov2|condinst|rtmdet_ins) TIME_LIMIT="08:00:00" ;;
   *) echo "Unknown method: ${METHOD}" >&2; exit 2 ;;
 esac
 

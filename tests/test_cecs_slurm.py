@@ -33,8 +33,8 @@ def test_cecs_submission_covers_ours_and_fourteen_baselines_sequentially():
     assert all(method in submit for method in methods)
     assert 'afterany:${previous_job}' in submit
     assert 'METHODS=("$@")' in submit
-    assert 'HEAVY_METHODS=(cascade_mask_rcnn htc queryinst mask2former)' in submit
-    assert 'LONG_METHODS=(m2_lite cascade_mask_rcnn htc queryinst mask2former)' in submit
+    assert 'HEAVY_METHODS=(maskrcnn_consensus cascade_mask_rcnn htc queryinst mask2former)' in submit
+    assert 'LONG_METHODS=(m2_lite maskrcnn_consensus cascade_mask_rcnn htc queryinst mask2former)' in submit
     assert 'array_spec="0-1%2"' in submit
     assert 'array_spec="0-4%2"' in submit
     assert 'seeds_per_gpu=2' in submit
