@@ -11,7 +11,7 @@ cd "${PROJECT_ROOT}"
 source "${VENV_PATH}/bin/activate"
 mkdir -p "${ARTIFACT_ROOT}/logs" "${PROJECT_ROOT}/slurm_logs"
 test -d "${DATA_ROOT}" || { echo "Missing DATA_ROOT: ${DATA_ROOT}" >&2; exit 1; }
-"${PYTHON}" -m pip install -r requirements.txt
+"${PYTHON}" -m pip install --find-links "${PROJECT_ROOT}/wheels" -r requirements.txt
 "${PYTHON}" -m pip install -e . --no-deps
 "${PYTHON}" - <<'PY'
 import sys

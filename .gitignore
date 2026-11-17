@@ -7,6 +7,10 @@
 /external/
 /baseline_work/
 /data/
+
+# Versioned Linux wheelhouse for CECS; keep these files in Git intentionally.
+!/wheels/
+!/wheels/*.whl
 /datasets/
 /logs/
 /predictions/

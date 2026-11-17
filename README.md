@@ -235,6 +235,10 @@ export VENV_PATH="$HOME/.venv"
 bash scripts/prepare_cecs.sh
 ```
 
+The versioned `wheels/` directory is used as the first package source during
+preparation; pip falls back to its configured package index only for artifacts
+not present in the local wheelhouse.
+
 If the environment is already installed but `outputs/` is new or empty, prepare
 only the fixed split and model input views (no package installation):
 
