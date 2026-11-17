@@ -38,7 +38,10 @@ mkdir -p "${ARTIFACT_ROOT}/logs" "${PROJECT_ROOT}/slurm_logs"
 "${PYTHON}" "${PROJECT_ROOT}/scripts/check_cecs_env.py"
 
 SEEDS_PER_GPU="${SEEDS_PER_GPU:-2}"
-if [[ "${SEEDS_PER_GPU}" == "2" ]]; then
+if [[ -n "${SINGLE_SEED:-}" ]]; then
+  seeds=("${SINGLE_SEED}")
+  tail_seed=""
+elif [[ "${SEEDS_PER_GPU}" == "2" ]]; then
   if [[ "${SLURM_ARRAY_TASK_ID}" == "0" ]]; then
     seeds=(3020 3021)
     tail_seed=3024

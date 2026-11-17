@@ -16,6 +16,6 @@ TRAIN_ARGS=()
 BASELINE_BATCH="${BASELINE_BATCH:-4}"
 [[ "${MODEL}" == "fullres_unet" ]] && TRAIN_ARGS=(--batch "${BASELINE_BATCH}")
 [[ "${MODEL}" == "edgeattnet" ]] && TRAIN_ARGS=(--epochs 50 --batch "${BASELINE_BATCH}" --crop-size 512)
-"${PYTHON}" "${PROJECT_ROOT}/baselines/semantic_fullres.py" train "${COMMON[@]}" "${TRAIN_ARGS[@]}"
+"${PYTHON}" "${PROJECT_ROOT}/baselines/semantic_fullres.py" train "${COMMON[@]}" "${TRAIN_ARGS[@]}" --resume
 "${PYTHON}" "${PROJECT_ROOT}/baselines/semantic_fullres.py" eval "${COMMON[@]}" --split val
 "${PYTHON}" "${PROJECT_ROOT}/baselines/semantic_fullres.py" eval "${COMMON[@]}" --split test --frozen-config "${RESULT}/val_best.json"

@@ -307,6 +307,12 @@ bash scripts/submit_cecs_all.sh m2_lite yolov8l unetpp_watershed
 bash scripts/submit_cecs_all.sh htc condinst
 ```
 
+Resume or run exactly one seed without resubmitting the other four:
+
+```bash
+bash scripts/submit_cecs_seed.sh fullres_unet 3024
+```
+
 Monitor and inspect logs:
 
 ```bash

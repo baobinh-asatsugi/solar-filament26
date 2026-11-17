@@ -19,6 +19,7 @@ def test_cecs_job_runs_two_seeds_per_gpu_with_two_gpu_quota():
     assert "#SBATCH --time=08:00:00" in job
     assert 'SEEDS_PER_GPU="${SEEDS_PER_GPU:-2}"' in job
     assert 'seeds=("$((3020 + SLURM_ARRAY_TASK_ID))")' in job
+    assert 'seeds=("${SINGLE_SEED}")' in job
 
 
 def test_cecs_submission_covers_ours_and_fourteen_baselines_sequentially():
@@ -97,3 +98,12 @@ def test_cecs_submit_requires_prepared_outputs_and_has_data_only_preparer():
     assert "prepare_cecs_data.sh" in submit
     assert "prepare_fixed_split.sh" in prepare
     assert "prepare_baselines.sh" in prepare
+
+
+def test_single_seed_submitter_uses_one_gpu_and_requested_seed():
+    submit = (ROOT / "scripts/submit_cecs_seed.sh").read_text()
+    assert 'SINGLE_SEED=${SEED}' in submit
+    assert "--array=0" in submit
+    assert "--mem=16G" in submit
+    assert 'TIME_LIMIT="08:00:00"' in submit
+    assert 'TIME_LIMIT="12:00:00"' in submit

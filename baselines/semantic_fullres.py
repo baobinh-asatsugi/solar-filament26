@@ -309,6 +309,7 @@ def main() -> None:
     parser.add_argument("--batch", type=int, default=4)
     parser.add_argument("--crop-size", type=int, default=1024)
     parser.add_argument("--workers", type=int, default=4)
+    parser.add_argument("--resume", action="store_true")
     parser.add_argument("--split", choices=("val", "test"), default="val")
     parser.add_argument("--frozen-config", type=Path)
     args = parser.parse_args()
@@ -322,8 +323,15 @@ def main() -> None:
     cache_root = args.artifact_root / "baseline_cache" / "magfilo_v1" / "semantic_union"
     run_dir.mkdir(parents=True, exist_ok=True); result_dir.mkdir(parents=True, exist_ok=True)
     checkpoint = run_dir / "best.pt"
+    last_checkpoint = run_dir / "last.pt"
+    resume_checkpoint = None
+    if args.command == "train" and args.resume:
+        if last_checkpoint.is_file():
+            resume_checkpoint = last_checkpoint
+        elif checkpoint.is_file():
+            resume_checkpoint = checkpoint
     model = (PaperEdgeAttNet() if args.model == "edgeattnet" else ResNetUNet(
-        pretrained=args.command == "train"
+        pretrained=args.command == "train" and resume_checkpoint is None
     )).to(device)
 
     if args.command == "train":
@@ -343,8 +351,34 @@ def main() -> None:
         ) if not edge_method else None
         scaler = torch.cuda.amp.GradScaler(enabled=device.type == "cuda")
         bce = nn.BCEWithLogitsLoss()
-        best = -1.0
-        for epoch in range(1, args.epochs + 1):
+        best = -1.0; start_epoch = 1
+        if resume_checkpoint is not None:
+            payload = torch.load(resume_checkpoint, map_location="cpu", weights_only=False)
+            model.load_state_dict(payload["model"])
+            start_epoch = int(payload.get("epoch", 0)) + 1
+            stored_best = payload.get("best_pq", payload.get("val_pq"))
+            if stored_best is None:
+                recovered = tune_stream(
+                    coco,
+                    manifest[manifest["split"] == "val"],
+                    iter_probabilities(model, validation, device),
+                    frozen={"mask_threshold": 0.5, "min_area": 300},
+                )
+                best = float(recovered.iloc[0]["global_pq"])
+                print(f"Recovered legacy best checkpoint PQ={best:.6f}")
+            else:
+                best = float(stored_best)
+            if "optimizer" in payload:
+                optimizer.load_state_dict(payload["optimizer"])
+            if scheduler is not None and payload.get("scheduler") is not None:
+                scheduler.load_state_dict(payload["scheduler"])
+            if "scaler" in payload:
+                scaler.load_state_dict(payload["scaler"])
+            print(
+                f"Resuming {args.model} from {resume_checkpoint} at "
+                f"epoch {start_epoch}/{args.epochs}; best_pq={best:.6f}"
+            )
+        for epoch in range(start_epoch, args.epochs + 1):
             model.train(); total = 0.0
             for image, target, _ in tqdm(loader, desc=f"{args.model} {epoch}/{args.epochs}"):
                 image, target = image.to(device), target.to(device)
@@ -371,7 +405,15 @@ def main() -> None:
                 best = metrics["global_pq"]
                 torch.save({"model": model.state_dict(), "epoch": epoch, "seed": args.seed,
                             "input_size": INPUT_SIZE, "crop_size": args.crop_size,
-                            "model_name": args.model}, checkpoint)
+                            "model_name": args.model, "val_pq": best}, checkpoint)
+            torch.save({
+                "model": model.state_dict(), "optimizer": optimizer.state_dict(),
+                "scheduler": scheduler.state_dict() if scheduler is not None else None,
+                "scaler": scaler.state_dict(), "epoch": epoch, "best_pq": best,
+                "seed": args.seed, "input_size": INPUT_SIZE,
+                "crop_size": args.crop_size, "model_name": args.model,
+            }, last_checkpoint)
+        last_checkpoint.unlink(missing_ok=True)
         return
 
     payload = torch.load(checkpoint, map_location=device)
