@@ -3,30 +3,28 @@ from __future__ import annotations
 import sys
 
 
-REPAIR = (
-    "python -m pip install --force-reinstall --no-cache-dir "
-    "numpy==1.26.4 opencv-python-headless==4.11.0.86"
-)
-
-
 def main() -> None:
     try:
         import cv2
         import numpy as np
         import torch
     except Exception as error:
-        raise SystemExit(f"CECS environment import failed: {error}\nRepair with:\n  {REPAIR}") from error
+        raise SystemExit(f"CECS environment import failed: {error}") from error
 
-    if np.__version__ != "1.26.4":
-        raise SystemExit(
-            f"CECS requires NumPy 1.26.4, found {np.__version__}.\nRepair with:\n  {REPAIR}"
-        )
-    if cv2.__version__ != "4.11.0":
-        raise SystemExit(
-            f"CECS requires OpenCV 4.11.0, found {cv2.__version__}.\nRepair with:\n  {REPAIR}"
-        )
     if torch.version.cuda is None:
         raise SystemExit("CECS virtual environment contains a CPU-only PyTorch build")
+
+    # Check the real ABI boundary instead of rejecting a NumPy version number.
+    # This catches an actually incompatible PyTorch build while allowing NumPy 2.
+    try:
+        array = np.zeros((2, 2), dtype=np.float32)
+        tensor = torch.from_numpy(array)
+        if tensor.shape != (2, 2) or tensor.numpy().shape != (2, 2):
+            raise RuntimeError("unexpected NumPy/Torch bridge result")
+        if cv2.resize(array, (1, 1)).shape != (1, 1):
+            raise RuntimeError("unexpected OpenCV/NumPy bridge result")
+    except Exception as error:
+        raise SystemExit(f"CECS NumPy/Torch/OpenCV ABI check failed: {error}") from error
 
     print(
         f"CECS environment OK: python={sys.executable} torch={torch.__version__} "

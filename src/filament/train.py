@@ -3,15 +3,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-import numpy as np
 import torch
-
-if int(np.__version__.split(".")[0]) >= 2:
-    raise RuntimeError(
-        f"NumPy {np.__version__} is incompatible with this server's PyTorch build. "
-        "Run: python -m pip install --force-reinstall numpy==1.26.4 "
-        "opencv-python-headless==4.11.0.86"
-    )
 
 from ultralytics import YOLO
 

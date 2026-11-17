@@ -13,7 +13,6 @@ fi
 echo "Using Conda environment: ${CONDA_DEFAULT_ENV}"
 echo "Python: $(command -v python)"
 python -m pip install --upgrade pip wheel
-python -m pip install --force-reinstall "numpy==1.26.4" "opencv-python-headless==4.11.0.86"
 python -m pip install -r requirements.txt
 python -m pip install -e . --no-deps
 
