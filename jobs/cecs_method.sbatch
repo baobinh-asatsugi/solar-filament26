@@ -35,6 +35,7 @@ export MKL_NUM_THREADS="${MKL_NUM_THREADS:-2}"
 cd "${PROJECT_ROOT}"
 source "${VENV_PATH}/bin/activate"
 mkdir -p "${ARTIFACT_ROOT}/logs" "${PROJECT_ROOT}/slurm_logs"
+"${PYTHON}" "${PROJECT_ROOT}/scripts/check_cecs_env.py"
 
 if [[ "${SLURM_ARRAY_TASK_ID}" == "0" ]]; then
   seeds=(3020 3021)

@@ -231,6 +231,15 @@ export VENV_PATH="$HOME/.venv"
 bash scripts/prepare_cecs.sh
 ```
 
+If a previously prepared environment reports NumPy 2.x, repair the existing
+virtual environment before resubmitting (no data or checkpoints are removed):
+
+```bash
+python -m pip install --force-reinstall --no-cache-dir \
+  numpy==1.26.4 opencv-python-headless==4.11.0.86
+python scripts/check_cecs_env.py
+```
+
 Submit the proposed method plus all 14 baselines (75 runs):
 
 ```bash

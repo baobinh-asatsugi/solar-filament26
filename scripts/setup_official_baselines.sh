@@ -19,7 +19,7 @@ fi
 "${PYTHON}" -m pip install -U openmim
 "${PYTHON}" -m mim install 'mmengine>=0.7.1,<1.0.0' 'mmcv>=2.0.0rc4,<2.2.0'
 "${PYTHON}" -m pip install \
-  numpy==1.26.4 pandas scipy pycocotools opencv-python-headless tqdm PyYAML \
+  numpy==1.26.4 pandas scipy pycocotools opencv-python-headless==4.11.0.86 tqdm PyYAML \
   shapely terminaltables
 # MMDetection's setup imports torch while determining build requirements and
 # its pinned backend predates PEP 660 editable installs. Build a regular local

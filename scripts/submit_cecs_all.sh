@@ -12,6 +12,7 @@ mkdir -p "${ARTIFACT_ROOT}/logs" "${PROJECT_ROOT}/slurm_logs"
 test -d "${DATA_ROOT}" || { echo "Missing DATA_ROOT: ${DATA_ROOT}" >&2; exit 1; }
 test -x "${PYTHON}" || { echo "Missing virtualenv Python: ${PYTHON}" >&2; exit 1; }
 test -s "splits/magfilo_v1/manifest.csv" || { echo "Run scripts/prepare_cecs.sh first" >&2; exit 1; }
+"${PYTHON}" "${PROJECT_ROOT}/scripts/check_cecs_env.py"
 
 METHODS=(
   m2_lite yolov8l unetpp_watershed

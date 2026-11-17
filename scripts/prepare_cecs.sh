@@ -27,4 +27,9 @@ bash scripts/prepare_baselines.sh
 if [[ "${INSTALL_MMDET:-1}" == "1" ]]; then
   bash scripts/setup_official_baselines.sh
 fi
+# OpenMIM/MMCV dependency resolution may upgrade NumPy indirectly. Restore the
+# ABI-compatible pair last, after every optional baseline has been installed.
+"${PYTHON}" -m pip install --force-reinstall --no-cache-dir \
+  numpy==1.26.4 opencv-python-headless==4.11.0.86
+"${PYTHON}" "${PROJECT_ROOT}/scripts/check_cecs_env.py"
 echo "CECS preparation complete: ${DATA_ROOT} -> ${ARTIFACT_ROOT}"
