@@ -38,6 +38,7 @@ def test_cecs_defaults_resolve_requested_home_layout_without_identity_literals()
         assert "${HOME}/datasets/magfilom" in text
         assert "${HOME}/.venv" in text
         assert "/mnt/users/24mai.tp" not in text
+        assert "ml26_artifacts" not in text
 
 
 def test_slurm_bypasses_node_wide_gpu_gate():
@@ -50,3 +51,10 @@ def test_prepare_accepts_gpu_free_login_node_but_rejects_cpu_only_torch():
     prepare = (ROOT / "scripts/prepare_cecs.sh").read_text()
     assert "torch.version.cuda is None" in prepare
     assert "if not torch.cuda.is_available()" not in prepare
+
+
+def test_cecs_m2_lite_runs_frozen_final_test_and_skips_existing_result():
+    dispatcher = (ROOT / "scripts/run_cecs_method_seed.sh").read_text()
+    evaluator = (ROOT / "scripts/evaluate_final_test.sh").read_text()
+    assert "evaluate_final_test.sh" in dispatcher
+    assert "final test result exists; skipping" in evaluator

@@ -2,7 +2,7 @@
 set -euo pipefail
 export PROJECT_ROOT="${PROJECT_ROOT:-${HOME}/ml26}"
 export DATA_ROOT="${DATA_ROOT:-${HOME}/datasets/magfilom}"
-export ARTIFACT_ROOT="${ARTIFACT_ROOT:-${HOME}/ml26_artifacts}"
+export ARTIFACT_ROOT="${ARTIFACT_ROOT:-${PROJECT_ROOT}/outputs}"
 export VENV_PATH="${VENV_PATH:-${HOME}/.venv}"
 export PYTHON="${VENV_PATH}/bin/python"
 export PYTHONPATH="${PROJECT_ROOT}/src:${PROJECT_ROOT}"

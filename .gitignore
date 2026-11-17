@@ -3,6 +3,7 @@
 
 # Generated datasets, predictions, runs, and submissions
 /artifacts/
+/outputs/
 /external/
 /baseline_work/
 /data/

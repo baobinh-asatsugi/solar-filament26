@@ -192,9 +192,15 @@ Outputs:
 ```text
 $ARTIFACT_ROOT/results/five_seed_runs.csv
 $ARTIFACT_ROOT/results/five_seed_summary.csv
+$ARTIFACT_ROOT/results/five_seed_skipped.csv
 ```
 
-The summary script explicitly reports missing method/seed pairs. The primary
+The summary includes explicit `n_seeds`, the included seed IDs (for example,
+`s3020|s3021`), and a
+`complete_5_seeds` flag for every included method. Models with no valid result
+are omitted. Missing/empty/invalid results are not
+averaged; they are written to `five_seed_skipped.csv` together with whether a
+checkpoint exists. The primary
 metric is pooled/global PQ with one-to-one matching at IoU `> 0.5`; it also
 reports mean PQ, SQ, RQ, TP, FP, and FN. Every evaluator also reports pooled
 foreground Dice/IoU and mean-per-annotation-record Dice/IoU. Model selection
@@ -209,7 +215,7 @@ default relative to `$HOME`, so on the project account they resolve to:
 $HOME/ml26                 code
 $HOME/datasets/magfilom    MAGFiLO data
 $HOME/.venv                Python virtual environment
-$HOME/ml26_artifacts       checkpoints, caches, logs, and results
+$HOME/ml26/outputs         checkpoints, caches, logs, and results
 ```
 
 Prepare once from the login node (dependency installation requires network
@@ -220,7 +226,7 @@ cd "$HOME/ml26"
 source "$HOME/.venv/bin/activate"
 export PROJECT_ROOT="$HOME/ml26"
 export DATA_ROOT="$HOME/datasets/magfilom"
-export ARTIFACT_ROOT="$HOME/ml26_artifacts"
+export ARTIFACT_ROOT="$HOME/ml26/outputs"
 export VENV_PATH="$HOME/.venv"
 bash scripts/prepare_cecs.sh
 ```
@@ -229,6 +235,35 @@ Submit the proposed method plus all 14 baselines (75 runs):
 
 ```bash
 bash scripts/submit_cecs_all.sh
+```
+
+Submit exactly one model (all five seeds) with any one of these commands:
+
+```bash
+# 1. Proposed M2-Lite
+bash scripts/submit_cecs_all.sh m2_lite
+
+# 2. YOLOv8l-seg
+bash scripts/submit_cecs_all.sh yolov8l
+
+# 3. U-Net++ + watershed
+bash scripts/submit_cecs_all.sh unetpp_watershed
+
+# 4-7. Solar/domain baselines
+bash scripts/submit_cecs_all.sh fullres_unet
+bash scripts/submit_cecs_all.sh edgeattnet
+bash scripts/submit_cecs_all.sh maskrcnn_consensus
+bash scripts/submit_cecs_all.sh detr_crop_unet
+
+# 8-15. Official MMDetection baselines
+bash scripts/submit_cecs_all.sh mask_rcnn
+bash scripts/submit_cecs_all.sh cascade_mask_rcnn
+bash scripts/submit_cecs_all.sh htc
+bash scripts/submit_cecs_all.sh solov2
+bash scripts/submit_cecs_all.sh condinst
+bash scripts/submit_cecs_all.sh queryinst
+bash scripts/submit_cecs_all.sh mask2former
+bash scripts/submit_cecs_all.sh rtmdet_ins
 ```
 
 Each method is one Slurm array `0-1%2`. Each task requests one GPU and runs two
@@ -246,7 +281,7 @@ Monitor and inspect logs:
 ```bash
 squeue --me -o '%.18i %.28j %.2t %.10M %.6D %R %b'
 tail -f slurm_logs/ml26-m2_lite-*.out
-tail -f "$ARTIFACT_ROOT/logs/cecs_m2_lite_s3020.log"
+tail -f "$PROJECT_ROOT/outputs/logs/cecs_m2_lite_s3020.log"
 ```
 
 All seed runners remain idempotent: completed final results are skipped, while
@@ -254,6 +289,17 @@ M2-Lite resumes its detector, semantic cache, SIRA, refinement, selector, and
 evaluation stages independently. CECS uses batch size one for memory-sensitive
 trainers so that two seeds can share a GPU; source/evaluation resolution remains
 2048 and model architectures, objectives, and schedules are unchanged.
+
+After any subset finishes, manually regenerate the partial-safe aggregate:
+
+```bash
+export ARTIFACT_ROOT="$PROJECT_ROOT/outputs"
+bash scripts/summarize_five_seed_results.sh
+```
+
+The aggregate never treats a missing checkpoint/result as score zero. It skips
+that run, reports the exact number and IDs of included seeds, and records the
+reason in `outputs/results/five_seed_skipped.csv`.
 
 ## Verification
 
