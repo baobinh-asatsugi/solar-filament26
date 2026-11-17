@@ -18,3 +18,5 @@ def test_m2_and_yolo_runners_pass_local_weight_path():
         assert '${PROJECT_ROOT}/weights/yolov8l-seg.pt' in text
         assert 'YOLO_MODEL="yolov8l-seg.pt"' in text
         assert '--model "${YOLO_MODEL}"' in text
+        assert 'weights/last.pt' in text
+        assert '--resume auto' in text

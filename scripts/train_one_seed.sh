@@ -24,6 +24,7 @@ SEM="${TAG}_semantic"
 SIRA="${TAG}_sira"
 SELECTOR="${TAG}_selector"
 DET_BEST="${ARTIFACT_ROOT}/runs/${DET}/weights/best.pt"
+DET_LAST="${ARTIFACT_ROOT}/runs/${DET}/weights/last.pt"
 SEM_BEST="${ARTIFACT_ROOT}/runs/${SEM}/best.pt"
 SIRA_BEST="${ARTIFACT_ROOT}/runs/${SIRA}/best.pt"
 SIRA_COMPLETE="${ARTIFACT_ROOT}/runs/${SIRA}/train_complete.json"
@@ -42,6 +43,11 @@ fi
 
 if [[ -s "${DET_BEST}" ]]; then
   echo "[M2-Lite seed ${SEED}] detector checkpoint exists; skipping YOLO training"
+elif [[ -s "${DET_LAST}" ]]; then
+  echo "[M2-Lite seed ${SEED}] resuming interrupted YOLO training from ${DET_LAST}"
+  "${PYTHON}" -m filament.train --run-name "${DET}" --model "${YOLO_MODEL}" --data-yaml "${DATA}" \
+    --imgsz 2048 --epochs 30 --batch 1 --workers "${YOLO_WORKERS}" --device "${GPU}" --seed "${SEED}" \
+    --mosaic 0 --mixup 0 --translate 0 --scale 0.1 --fliplr 0.5 --flipud 0.5 --close-mosaic 0 --resume auto
 else
   "${PYTHON}" -m filament.train --run-name "${DET}" --model "${YOLO_MODEL}" --data-yaml "${DATA}" \
     --imgsz 2048 --epochs 30 --batch 1 --workers "${YOLO_WORKERS}" --device "${GPU}" --seed "${SEED}" \

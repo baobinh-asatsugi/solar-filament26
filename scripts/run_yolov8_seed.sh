@@ -7,6 +7,7 @@ export PROJECT_ROOT ARTIFACT_ROOT DATA_ROOT PYTHON
 export PYTHONPATH="${PROJECT_ROOT}/src:${PROJECT_ROOT}"; RUN="magfilo_v1_yolov8l_s${SEED}"
 LOG="${ARTIFACT_ROOT}/logs/yolov8_s${SEED}.log"
 BEST="${ARTIFACT_ROOT}/runs/${RUN}/weights/best.pt"
+LAST="${ARTIFACT_ROOT}/runs/${RUN}/weights/last.pt"
 YOLO_WORKERS="${YOLO_WORKERS:-6}"
 YOLO_MODEL="${YOLO_MODEL:-${PROJECT_ROOT}/weights/yolov8l-seg.pt}"
 if [[ ! -s "${YOLO_MODEL}" ]]; then
@@ -15,12 +16,17 @@ if [[ ! -s "${YOLO_MODEL}" ]]; then
 fi
 GATE=(bash "${PROJECT_ROOT}/scripts/run_with_gpu_limit.sh" "${GPU}" "${LOG}")
 
-if [[ ! -s "${BEST}" ]]; then
+if [[ -s "${BEST}" ]]; then
+  echo "[YOLO seed ${SEED}] existing best checkpoint; skipping training" | tee -a "${LOG}"
+elif [[ -s "${LAST}" ]]; then
+  echo "[YOLO seed ${SEED}] resuming interrupted training from ${LAST}" | tee -a "${LOG}"
+  "${GATE[@]}" "${PYTHON}" -m filament.train --run-name "${RUN}" --model "${YOLO_MODEL}" \
+    --data-yaml "${ARTIFACT_ROOT}/datasets/m2_lite_magfilo_v1/dataset.yaml" --imgsz 2048 --epochs 30 --batch 1 \
+    --workers "${YOLO_WORKERS}" --device "${GPU}" --seed "${SEED}" --mosaic 0 --mixup 0 --translate 0 --scale .1 --fliplr .5 --flipud .5 --close-mosaic 0 --resume auto
+else
   "${GATE[@]}" "${PYTHON}" -m filament.train --run-name "${RUN}" --model "${YOLO_MODEL}" \
     --data-yaml "${ARTIFACT_ROOT}/datasets/m2_lite_magfilo_v1/dataset.yaml" --imgsz 2048 --epochs 30 --batch 1 \
     --workers "${YOLO_WORKERS}" --device "${GPU}" --seed "${SEED}" --mosaic 0 --mixup 0 --translate 0 --scale .1 --fliplr .5 --flipud .5 --close-mosaic 0
-else
-  echo "[YOLO seed ${SEED}] existing best checkpoint; skipping training" | tee -a "${LOG}"
 fi
 OUT="${ARTIFACT_ROOT}/results/${RUN}"
 if [[ ! -s "${OUT}/val_best.json" ]]; then
