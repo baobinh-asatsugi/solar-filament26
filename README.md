@@ -281,11 +281,13 @@ bash scripts/submit_cecs_all.sh mask2former
 bash scripts/submit_cecs_all.sh rtmdet_ins
 ```
 
-Each method is one Slurm array `0-1%2`. Each task requests one GPU and four CPUs,
-and runs two
-seeds concurrently: `3020+3021` on the first allocated GPU and `3022+3023` on
-the second; seed `3024` follows on the first. Method jobs are dependency-chained,
-so only one method occupies the two-GPU quota at a time. To test selected methods:
+Standard methods use Slurm array `0-1%2`: each task requests one GPU, four CPUs,
+and 16 GB host RAM, and runs two seeds concurrently. Thus `3020+3021` run on
+the first GPU and `3022+3023` on the second (four simultaneous seeds); seed
+`3024` follows on the first. GPU-heavy methods (`cascade_mask_rcnn`, `htc`,
+`queryinst`, and `mask2former`) instead use array `0-4%2`, one seed per GPU and
+at most two simultaneous seeds. Method jobs are dependency-chained, so only one
+method occupies the two-GPU quota at a time. To test selected methods:
 
 ```bash
 bash scripts/submit_cecs_all.sh m2_lite yolov8l unetpp_watershed

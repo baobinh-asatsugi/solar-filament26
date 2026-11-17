@@ -3,7 +3,7 @@
 #SBATCH --qos=student
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=4
-#SBATCH --mem=32G
+#SBATCH --mem=16G
 #SBATCH --time=04:00:00
 #SBATCH --array=0-1%2
 #SBATCH --output=slurm_logs/%x-%A_%a.out
@@ -37,12 +37,21 @@ source "${VENV_PATH}/bin/activate"
 mkdir -p "${ARTIFACT_ROOT}/logs" "${PROJECT_ROOT}/slurm_logs"
 "${PYTHON}" "${PROJECT_ROOT}/scripts/check_cecs_env.py"
 
-if [[ "${SLURM_ARRAY_TASK_ID}" == "0" ]]; then
-  seeds=(3020 3021)
-  tail_seed=3024
-else
-  seeds=(3022 3023)
+SEEDS_PER_GPU="${SEEDS_PER_GPU:-2}"
+if [[ "${SEEDS_PER_GPU}" == "2" ]]; then
+  if [[ "${SLURM_ARRAY_TASK_ID}" == "0" ]]; then
+    seeds=(3020 3021)
+    tail_seed=3024
+  else
+    seeds=(3022 3023)
+    tail_seed=""
+  fi
+elif [[ "${SEEDS_PER_GPU}" == "1" ]]; then
+  seeds=("$((3020 + SLURM_ARRAY_TASK_ID))")
   tail_seed=""
+else
+  echo "Unsupported SEEDS_PER_GPU=${SEEDS_PER_GPU}" >&2
+  exit 2
 fi
 
 run_seed() {

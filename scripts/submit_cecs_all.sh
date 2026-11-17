@@ -35,20 +35,58 @@ if (( $# > 0 )); then
 fi
 job_ids=()
 previous_job=""
+HEAVY_METHODS=(cascade_mask_rcnn htc queryinst mask2former)
+is_heavy() {
+  local candidate="$1"
+  local heavy
+  for heavy in "${HEAVY_METHODS[@]}"; do
+    [[ "${candidate}" == "${heavy}" ]] && return 0
+  done
+  return 1
+}
+
 for method in "${METHODS[@]}"; do
   dependency_args=()
   [[ -n "${previous_job}" ]] && dependency_args=(--dependency="afterany:${previous_job}")
-  response="$(sbatch --parsable "${dependency_args[@]}" --job-name="ml26-${method}" \
-    --export="ALL,METHOD=${method},PROJECT_ROOT=${PROJECT_ROOT},DATA_ROOT=${DATA_ROOT},ARTIFACT_ROOT=${ARTIFACT_ROOT},VENV_PATH=${VENV_PATH}" \
-    jobs/cecs_method.sbatch)"
+  if is_heavy "${method}"; then
+    array_spec="0-4%2"
+    seeds_per_gpu=1
+    time_limit="08:00:00"
+    echo "Resource policy ${method}: heavy, 1 seed/GPU, 2 GPUs, mem=16G/task"
+  else
+    array_spec="0-1%2"
+    seeds_per_gpu=2
+    time_limit="04:00:00"
+    echo "Resource policy ${method}: standard, 2 seeds/GPU, 2 GPUs, mem=16G/task"
+  fi
+  submit_args=(
+    --parsable "${dependency_args[@]}" --job-name="ml26-${method}"
+    --array="${array_spec}" --cpus-per-task=4 --mem=16G --time="${time_limit}"
+    --export="ALL,METHOD=${method},SEEDS_PER_GPU=${seeds_per_gpu},PROJECT_ROOT=${PROJECT_ROOT},DATA_ROOT=${DATA_ROOT},ARTIFACT_ROOT=${ARTIFACT_ROOT},VENV_PATH=${VENV_PATH}"
+    jobs/cecs_method.sbatch
+  )
+  if ! response="$(sbatch "${submit_args[@]}")"; then
+    echo "sbatch did not return cleanly; checking whether Slurm accepted ml26-${method}..." >&2
+    sleep 2
+    existing="$(squeue -h -u "${USER}" -n "ml26-${method}" -o '%A' | head -n 1)"
+    if [[ -z "${existing}" ]]; then
+      echo "No accepted job found for ml26-${method}; aborting." >&2
+      exit 1
+    fi
+    response="${existing}"
+    echo "Recovered accepted job after submit timeout: ${method} ${existing}" >&2
+  fi
   job_id="${response%%;*}"
   job_ids+=("${job_id}")
   previous_job="${job_id}"
   echo "Submitted ${method}: ${job_id}"
 done
 
-summary="$(sbatch --parsable --dependency="afterany:${previous_job}" \
+if summary="$(sbatch --parsable --dependency="afterany:${previous_job}" \
   --export="ALL,PROJECT_ROOT=${PROJECT_ROOT},ARTIFACT_ROOT=${ARTIFACT_ROOT},VENV_PATH=${VENV_PATH}" \
-  jobs/cecs_summary.sbatch)"
-echo "Submitted summary: ${summary%%;*}"
+  jobs/cecs_summary.sbatch)"; then
+  echo "Submitted summary: ${summary%%;*}"
+else
+  echo "WARNING: summary submission timed out; run scripts/summarize_five_seed_results.sh after completion" >&2
+fi
 echo "Monitor: squeue --me -o '%.18i %.28j %.2t %.10M %.6D %R %b'"
