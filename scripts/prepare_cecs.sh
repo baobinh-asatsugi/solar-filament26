@@ -22,8 +22,7 @@ if torch.version.cuda is None:
     raise SystemExit("The CECS virtual environment has a CPU-only PyTorch build")
 print("CUDA device visible on this node:", torch.cuda.is_available())
 PY
-bash scripts/prepare_fixed_split.sh
-bash scripts/prepare_baselines.sh
+bash scripts/prepare_cecs_data.sh
 if [[ "${INSTALL_MMDET:-1}" == "1" ]]; then
   bash scripts/setup_official_baselines.sh
 fi

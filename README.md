@@ -231,6 +231,13 @@ export VENV_PATH="$HOME/.venv"
 bash scripts/prepare_cecs.sh
 ```
 
+If the environment is already installed but `outputs/` is new or empty, prepare
+only the fixed split and model input views (no package installation):
+
+```bash
+bash scripts/prepare_cecs_data.sh
+```
+
 The submitter validates the actual NumPy–PyTorch–OpenCV ABI bridge rather than
 rejecting NumPy 2 by version number. It also snapshots the exact active virtual
 environment on every submission:
@@ -274,7 +281,8 @@ bash scripts/submit_cecs_all.sh mask2former
 bash scripts/submit_cecs_all.sh rtmdet_ins
 ```
 
-Each method is one Slurm array `0-1%2`. Each task requests one GPU and runs two
+Each method is one Slurm array `0-1%2`. Each task requests one GPU and four CPUs,
+and runs two
 seeds concurrently: `3020+3021` on the first allocated GPU and `3022+3023` on
 the second; seed `3024` follows on the first. Method jobs are dependency-chained,
 so only one method occupies the two-GPU quota at a time. To test selected methods:
