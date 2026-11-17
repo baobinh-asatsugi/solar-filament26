@@ -4,7 +4,8 @@ MODEL="${1:?model key}"; SEED="${2:?seed}"; GPU="${3:-0}"
 PROJECT_ROOT="${PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"; ARTIFACT_ROOT="${ARTIFACT_ROOT:-${PROJECT_ROOT}/artifacts}"
 DATA_ROOT="${DATA_ROOT:-${PROJECT_ROOT}/magfilo}"; PYTHON="${PYTHON:-python}"
 export PROJECT_ROOT ARTIFACT_ROOT DATA_ROOT PYTHON
-export PYTHONPATH="${PROJECT_ROOT}/src:${PROJECT_ROOT}"; export CUDA_VISIBLE_DEVICES="${GPU}"
+export PYTHONPATH="${PROJECT_ROOT}/src:${PROJECT_ROOT}"
+MMDET_BATCH_SIZE="${MMDET_BATCH_SIZE:-2}"
 UPSTREAM="${ARTIFACT_ROOT}/upstream/mmdetection-v3.3.0"
 OUT="${ARTIFACT_ROOT}/results/baseline_magfilo_v1_${MODEL}_s${SEED}"
 if [[ -s "${OUT}/test_best.json" ]]; then
@@ -26,7 +27,7 @@ IMAGE_ROOT="${DATA_ROOT}/images"
 WORK="${ARTIFACT_ROOT}/baseline_work/magfilo_v1/${MODEL}/seed${SEED}"; ANN="${ARTIFACT_ROOT}/baseline_data/annotations"
 "${PYTHON}" "${PROJECT_ROOT}/baselines/mmdet_adapter.py" --config "${UPSTREAM}/${CONFIG}" \
   --train-json "${ANN}/train.json" --val-json "${ANN}/val.json" --test-json "${ANN}/test.json" \
-  --image-root "${IMAGE_ROOT}" --work-dir "${WORK}" --seed "${SEED}"
+  --image-root "${IMAGE_ROOT}" --work-dir "${WORK}" --seed "${SEED}" --batch-size "${MMDET_BATCH_SIZE}"
 CHECKPOINT="$(cat "${WORK}/best_checkpoint")"; [[ "${CHECKPOINT}" = /* ]] || CHECKPOINT="${WORK}/${CHECKPOINT}"
 "${PYTHON}" "${PROJECT_ROOT}/baselines/eval_mmdet_pq.py" --config "${WORK}/adapted_config.py" --checkpoint "${CHECKPOINT}" \
   --manifest "${PROJECT_ROOT}/splits/magfilo_v1/manifest.csv" --split val --data-root "${DATA_ROOT}" \

@@ -10,8 +10,8 @@ import sys
 import torch
 print("Phase 9 Python:", sys.executable)
 print("Phase 9 PyTorch:", torch.__version__, "CUDA build:", torch.version.cuda)
-if "finetune-sd" not in sys.executable:
-    raise RuntimeError("Phase 9 must run with the finetune-sd Python interpreter")
+if sys.prefix == sys.base_prefix:
+    raise RuntimeError("MMDetection setup must run inside an activated virtual environment")
 PY
 if [[ ! -d "${UPSTREAM}/.git" ]]; then
   git clone --depth 1 --branch v3.3.0 https://github.com/open-mmlab/mmdetection.git "${UPSTREAM}"

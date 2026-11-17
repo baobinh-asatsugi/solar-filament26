@@ -7,12 +7,13 @@ export PROJECT_ROOT ARTIFACT_ROOT DATA_ROOT PYTHON
 export PYTHONPATH="${PROJECT_ROOT}/src:${PROJECT_ROOT}"; RUN="magfilo_v1_yolov8l_s${SEED}"
 LOG="${ARTIFACT_ROOT}/logs/yolov8_s${SEED}.log"
 BEST="${ARTIFACT_ROOT}/runs/${RUN}/weights/best.pt"
+YOLO_WORKERS="${YOLO_WORKERS:-6}"
 GATE=(bash "${PROJECT_ROOT}/scripts/run_with_gpu_limit.sh" "${GPU}" "${LOG}")
 
 if [[ ! -s "${BEST}" ]]; then
   "${GATE[@]}" "${PYTHON}" -m filament.train --run-name "${RUN}" --model yolov8l-seg.pt \
     --data-yaml "${ARTIFACT_ROOT}/datasets/m2_lite_magfilo_v1/dataset.yaml" --imgsz 2048 --epochs 30 --batch 1 \
-    --workers 6 --device "${GPU}" --seed "${SEED}" --mosaic 0 --mixup 0 --translate 0 --scale .1 --fliplr .5 --flipud .5 --close-mosaic 0
+    --workers "${YOLO_WORKERS}" --device "${GPU}" --seed "${SEED}" --mosaic 0 --mixup 0 --translate 0 --scale .1 --fliplr .5 --flipud .5 --close-mosaic 0
 else
   echo "[YOLO seed ${SEED}] existing best checkpoint; skipping training" | tee -a "${LOG}"
 fi

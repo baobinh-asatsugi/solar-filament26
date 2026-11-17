@@ -22,6 +22,14 @@ SCHEDULER_ROOT="${ARTIFACT_ROOT}/gpu_scheduler"
 LOCK_FILE="${SCHEDULER_ROOT}/gpu${GPU}.lock"
 
 mkdir -p "${SCHEDULER_ROOT}" "$(dirname "${LOG_FILE}")"
+if [[ -n "${SLURM_JOB_ID:-}" ]]; then
+  echo "[GPU gate] Slurm allocation ${SLURM_JOB_ID}; executing directly: $*" | tee -a "${LOG_FILE}"
+  set +e
+  "$@" 2>&1 | tee -a "${LOG_FILE}"
+  status=${PIPESTATUS[0]}
+  set -e
+  exit "${status}"
+fi
 command -v nvidia-smi >/dev/null || { echo "ERROR: nvidia-smi not found" >&2; exit 127; }
 command -v flock >/dev/null || { echo "ERROR: flock not found" >&2; exit 127; }
 

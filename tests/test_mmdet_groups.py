@@ -13,11 +13,11 @@ def test_official_baseline_groups_are_disjoint_and_named():
     assert (root / "scripts/launch_official_baselines_group2.sh").is_file()
 
 
-def test_mmdet_setup_uses_finetune_torch_without_build_isolation():
+def test_mmdet_setup_uses_active_venv_torch_without_build_isolation():
     root = Path(__file__).resolve().parents[1]
     setup = (root / "scripts/setup_official_baselines.sh").read_text()
     assert 'import torch' in setup
-    assert '"finetune-sd" not in sys.executable' in setup
+    assert "sys.prefix == sys.base_prefix" in setup
     assert 'pip install "${UPSTREAM}" --no-deps --no-build-isolation' in setup
     assert 'pip install -e "${UPSTREAM}"' not in setup
     assert 'shapely terminaltables' in setup

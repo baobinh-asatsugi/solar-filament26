@@ -31,12 +31,15 @@ SELECTOR_DIR="${ARTIFACT_ROOT}/results/${SELECTOR}"
 PREDICTION_ROOT="${ARTIFACT_ROOT}/predictions/${TAG}"
 SIRA_BATCH="${SIRA_BATCH:-2}"
 REFINE_BATCH="${REFINE_BATCH:-2}"
+M2_SEMANTIC_BATCH="${M2_SEMANTIC_BATCH:-2}"
+M2_WORKERS="${M2_WORKERS:-6}"
+YOLO_WORKERS="${YOLO_WORKERS:-6}"
 
 if [[ -s "${DET_BEST}" ]]; then
   echo "[M2-Lite seed ${SEED}] detector checkpoint exists; skipping YOLO training"
 else
   "${PYTHON}" -m filament.train --run-name "${DET}" --model yolov8l-seg.pt --data-yaml "${DATA}" \
-    --imgsz 2048 --epochs 30 --batch 1 --workers 6 --device "${GPU}" --seed "${SEED}" \
+    --imgsz 2048 --epochs 30 --batch 1 --workers "${YOLO_WORKERS}" --device "${GPU}" --seed "${SEED}" \
     --mosaic 0 --mixup 0 --translate 0 --scale 0.1 --fliplr 0.5 --flipud 0.5 --close-mosaic 0
 fi
 
@@ -47,7 +50,7 @@ else
     --architecture unetplusplus --encoder efficientnet-b3 --feature-mode radial \
     --annotation-strategy medoid --val-annotation-strategy duplicate --tile-size 768 \
     --train-samples 4000 --val-samples 1200 --positive-fraction 0.75 --epochs 20 \
-    --batch 2 --workers 6 --centerline-weight 0.1 --skeleton-recall-weight 0.2 \
+    --batch "${M2_SEMANTIC_BATCH}" --workers "${M2_WORKERS}" --centerline-weight 0.1 --skeleton-recall-weight 0.2 \
     --device "${GPU}" --seed "${SEED}"
 fi
 
@@ -67,7 +70,7 @@ else
   "${PYTHON}" -m filament.train_sira --run-name "${SIRA}" --manifest "${MANIFEST}" \
     --bank-root "${PREDICTION_ROOT}/raw" --semantic-root "${PREDICTION_ROOT}/semantic" \
     --crop-size 512 --architecture unet --encoder resnet34 --semantic-channel \
-    --epochs 25 --batch "${SIRA_BATCH}" --workers 6 --device "${GPU}" --seed "${SEED}" --resume
+    --epochs 25 --batch "${SIRA_BATCH}" --workers "${M2_WORKERS}" --device "${GPU}" --seed "${SEED}" --resume
 fi
 
 for SPLIT in train val test; do

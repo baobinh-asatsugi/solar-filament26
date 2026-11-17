@@ -200,6 +200,61 @@ reports mean PQ, SQ, RQ, TP, FP, and FN. Every evaluator also reports pooled
 foreground Dice/IoU and mean-per-annotation-record Dice/IoU. Model selection
 and decoder tuning remain based only on validation global PQ.
 
+## CECS Slurm execution
+
+The CECS launch path follows the cluster's `student` QoS and two-GPU cap. Paths
+default relative to `$HOME`, so on the project account they resolve to:
+
+```text
+$HOME/ml26                 code
+$HOME/datasets/magfilom    MAGFiLO data
+$HOME/.venv                Python virtual environment
+$HOME/ml26_artifacts       checkpoints, caches, logs, and results
+```
+
+Prepare once from the login node (dependency installation requires network
+access). The MMDetection checkout is pinned under the artifact root:
+
+```bash
+cd "$HOME/ml26"
+source "$HOME/.venv/bin/activate"
+export PROJECT_ROOT="$HOME/ml26"
+export DATA_ROOT="$HOME/datasets/magfilom"
+export ARTIFACT_ROOT="$HOME/ml26_artifacts"
+export VENV_PATH="$HOME/.venv"
+bash scripts/prepare_cecs.sh
+```
+
+Submit the proposed method plus all 14 baselines (75 runs):
+
+```bash
+bash scripts/submit_cecs_all.sh
+```
+
+Each method is one Slurm array `0-1%2`. Each task requests one GPU and runs two
+seeds concurrently: `3020+3021` on the first allocated GPU and `3022+3023` on
+the second; seed `3024` follows on the first. Method jobs are dependency-chained,
+so only one method occupies the two-GPU quota at a time. To test selected methods:
+
+```bash
+bash scripts/submit_cecs_all.sh m2_lite yolov8l unetpp_watershed
+bash scripts/submit_cecs_all.sh htc condinst
+```
+
+Monitor and inspect logs:
+
+```bash
+squeue --me -o '%.18i %.28j %.2t %.10M %.6D %R %b'
+tail -f slurm_logs/ml26-m2_lite-*.out
+tail -f "$ARTIFACT_ROOT/logs/cecs_m2_lite_s3020.log"
+```
+
+All seed runners remain idempotent: completed final results are skipped, while
+M2-Lite resumes its detector, semantic cache, SIRA, refinement, selector, and
+evaluation stages independently. CECS uses batch size one for memory-sensitive
+trainers so that two seeds can share a GPU; source/evaluation resolution remains
+2048 and model architectures, objectives, and schedules are unchanged.
+
 ## Verification
 
 ```bash

@@ -10,7 +10,7 @@ if [[ -s "${RESULT}/test_best.json" ]]; then
   echo "[unetpp_watershed seed ${SEED}] test result exists; skipping completed run"
   exit 0
 fi
-COMMON=(--manifest "${PROJECT_ROOT}/splits/magfilo_v1/manifest.csv" --data-root "${DATA_ROOT}" --artifact-root "${ARTIFACT_ROOT}" --output-dir "${OUT}" --seed "${SEED}" --device "${GPU}")
+COMMON=(--manifest "${PROJECT_ROOT}/splits/magfilo_v1/manifest.csv" --data-root "${DATA_ROOT}" --artifact-root "${ARTIFACT_ROOT}" --output-dir "${OUT}" --seed "${SEED}" --device "${GPU}" --batch "${UNETPP_BATCH:-2}" --workers "${UNETPP_WORKERS:-6}")
 "${PYTHON}" "${PROJECT_ROOT}/baselines/unetpp_watershed.py" train "${COMMON[@]}"
 "${PYTHON}" "${PROJECT_ROOT}/baselines/unetpp_watershed.py" eval "${COMMON[@]}" --split val
 "${PYTHON}" "${PROJECT_ROOT}/baselines/unetpp_watershed.py" eval "${COMMON[@]}" --split test

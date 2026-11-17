@@ -42,6 +42,7 @@ def _allowed(path: str) -> bool:
     dataset = path.startswith(("train_dataloader.dataset", "val_dataloader.dataset", "test_dataloader.dataset"))
     evaluator = path.startswith(("val_evaluator.", "test_evaluator.")) and path.rsplit(".", 1)[-1] in {"ann_file", "metric"}
     runtime = path in {"work_dir", "resume", "randomness", "auto_scale_lr.enable"}
+    dataloader_runtime = path == "train_dataloader.batch_size"
     checkpoint_policy = path.startswith("default_hooks.checkpoint.") and path.rsplit(".", 1)[-1] in {
         "interval", "max_keep_ckpts", "rule", "save_best", "save_last",
         "save_optimizer", "save_param_scheduler",
@@ -49,7 +50,7 @@ def _allowed(path: str) -> bool:
     shared_input = path.startswith(("train_dataloader.dataset", "val_dataloader.dataset", "test_dataloader.dataset")) and any(
         token in path for token in (".scale", ".scales", ".img_scale", ".size")
     )
-    return model_class or dataset or evaluator or runtime or shared_input or checkpoint_policy
+    return model_class or dataset or evaluator or runtime or dataloader_runtime or shared_input or checkpoint_policy
 
 
 def _set_num_classes(value) -> None:
@@ -177,6 +178,7 @@ def main() -> None:
     parser.add_argument("--seed", type=int, required=True)
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--input-size", type=int, default=2048)
+    parser.add_argument("--batch-size", type=int, default=2)
     args = parser.parse_args()
     register_all_modules()
     cfg = Config.fromfile(args.config.resolve())
@@ -190,6 +192,7 @@ def main() -> None:
     _set_input_size(cfg.train_dataloader.dataset, args.input_size)
     _set_input_size(cfg.val_dataloader.dataset, args.input_size)
     _set_input_size(cfg.test_dataloader.dataset, args.input_size)
+    cfg.train_dataloader.batch_size = args.batch_size
     semantic_target_count = 0
     if _has_semantic_head(cfg.model):
         semantic_root = args.work_dir / "semantic_targets"
@@ -226,7 +229,7 @@ def main() -> None:
         "upstream_config": str(args.config.resolve()), "changed_paths": changed,
         "shared_input_size": args.input_size,
         "semantic_target_count": semantic_target_count,
-        "invariant": "Only dataset/evaluator paths, one-class dimensions, the shared 2048 input size, seed/runtime, best-only checkpoint retention, and auto LR scaling may change.",
+        "invariant": "Only dataset/evaluator paths, one-class dimensions, the shared 2048 input size, per-process batch size, seed/runtime, best-only checkpoint retention, and auto LR scaling may change.",
     }, indent=2) + "\n")
     cfg.dump(args.work_dir / "adapted_config.py")
     Runner.from_cfg(cfg).train()
