@@ -216,7 +216,11 @@ $HOME/ml26                 code
 $HOME/datasets/magfilo     MAGFiLO data
 $HOME/.venv                Python virtual environment
 $HOME/ml26/outputs         checkpoints, caches, logs, and results
+$HOME/ml26/weights/yolov8l-seg.pt  preferred local YOLO pretrained weights
 ```
+
+YOLO training uses the local pretrained checkpoint above when present. If it
+is absent, Ultralytics is allowed to download `yolov8l-seg.pt` as a fallback.
 
 Prepare once from the login node (dependency installation requires network
 access). The MMDetection checkout is pinned under the artifact root:

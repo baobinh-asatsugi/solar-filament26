@@ -34,11 +34,16 @@ REFINE_BATCH="${REFINE_BATCH:-2}"
 M2_SEMANTIC_BATCH="${M2_SEMANTIC_BATCH:-2}"
 M2_WORKERS="${M2_WORKERS:-6}"
 YOLO_WORKERS="${YOLO_WORKERS:-6}"
+YOLO_MODEL="${YOLO_MODEL:-${PROJECT_ROOT}/weights/yolov8l-seg.pt}"
+if [[ ! -s "${YOLO_MODEL}" ]]; then
+  echo "[M2-Lite seed ${SEED}] local YOLO weights missing; falling back to Ultralytics download"
+  YOLO_MODEL="yolov8l-seg.pt"
+fi
 
 if [[ -s "${DET_BEST}" ]]; then
   echo "[M2-Lite seed ${SEED}] detector checkpoint exists; skipping YOLO training"
 else
-  "${PYTHON}" -m filament.train --run-name "${DET}" --model yolov8l-seg.pt --data-yaml "${DATA}" \
+  "${PYTHON}" -m filament.train --run-name "${DET}" --model "${YOLO_MODEL}" --data-yaml "${DATA}" \
     --imgsz 2048 --epochs 30 --batch 1 --workers "${YOLO_WORKERS}" --device "${GPU}" --seed "${SEED}" \
     --mosaic 0 --mixup 0 --translate 0 --scale 0.1 --fliplr 0.5 --flipud 0.5 --close-mosaic 0
 fi

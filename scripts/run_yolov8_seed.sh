@@ -8,10 +8,15 @@ export PYTHONPATH="${PROJECT_ROOT}/src:${PROJECT_ROOT}"; RUN="magfilo_v1_yolov8l
 LOG="${ARTIFACT_ROOT}/logs/yolov8_s${SEED}.log"
 BEST="${ARTIFACT_ROOT}/runs/${RUN}/weights/best.pt"
 YOLO_WORKERS="${YOLO_WORKERS:-6}"
+YOLO_MODEL="${YOLO_MODEL:-${PROJECT_ROOT}/weights/yolov8l-seg.pt}"
+if [[ ! -s "${YOLO_MODEL}" ]]; then
+  echo "[YOLO seed ${SEED}] local weights missing; falling back to Ultralytics download" | tee -a "${LOG}"
+  YOLO_MODEL="yolov8l-seg.pt"
+fi
 GATE=(bash "${PROJECT_ROOT}/scripts/run_with_gpu_limit.sh" "${GPU}" "${LOG}")
 
 if [[ ! -s "${BEST}" ]]; then
-  "${GATE[@]}" "${PYTHON}" -m filament.train --run-name "${RUN}" --model yolov8l-seg.pt \
+  "${GATE[@]}" "${PYTHON}" -m filament.train --run-name "${RUN}" --model "${YOLO_MODEL}" \
     --data-yaml "${ARTIFACT_ROOT}/datasets/m2_lite_magfilo_v1/dataset.yaml" --imgsz 2048 --epochs 30 --batch 1 \
     --workers "${YOLO_WORKERS}" --device "${GPU}" --seed "${SEED}" --mosaic 0 --mixup 0 --translate 0 --scale .1 --fliplr .5 --flipud .5 --close-mosaic 0
 else

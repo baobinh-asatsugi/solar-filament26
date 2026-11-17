@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 from pathlib import Path
 
 import torch
@@ -52,12 +53,21 @@ def main() -> None:
     if not data_yaml.is_file():
         raise FileNotFoundError(f"Run filament.prepare first: {data_yaml}")
 
+    local_pretrained = Path(os.environ.get("PROJECT_ROOT", Path.cwd())) / "weights" / "yolov8l-seg.pt"
+    model_source = args.model
+    if model_source == "yolov8l-seg.pt" and local_pretrained.is_file():
+        model_source = str(local_pretrained.resolve())
+        print(f"Using local YOLO pretrained weights: {model_source}")
+    elif model_source == "yolov8l-seg.pt":
+        print("Local YOLO weights missing; allowing Ultralytics to download yolov8l-seg.pt")
+
     device = args.device
     if device is None:
         device = "0,1" if torch.cuda.device_count() >= 2 else ("0" if torch.cuda.is_available() else "cpu")
     run_dir = paths.run_dir(args.run_name)
     last_checkpoint = run_dir / "weights" / "last.pt"
     train_config = vars(args).copy()
+    train_config["resolved_model"] = model_source
     train_config.update({"data_yaml": str(data_yaml), "run_dir": str(run_dir)})
     write_json(paths.experiment_results(args.run_name) / "requested_train_config.json", train_config)
     record_event(
@@ -77,7 +87,7 @@ def main() -> None:
             raise FileExistsError(
                 f"Run directory already exists: {run_dir}. Choose a new --run-name or use --resume."
             )
-        model = YOLO(args.model)
+        model = YOLO(model_source)
         kwargs = dict(
             data=str(data_yaml), project=str(paths.runs_root), name=args.run_name, exist_ok=False,
             imgsz=args.imgsz, epochs=args.epochs, batch=args.batch, workers=args.workers,
