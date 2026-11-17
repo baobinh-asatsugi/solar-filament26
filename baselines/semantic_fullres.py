@@ -28,9 +28,16 @@ from baselines.common import (
     annotation_maps,
     connected_instances,
     load_problem,
-    pooled_pq,
     semantic_union,
     write_result,
+)
+from filament.postprocess import (
+    accumulate_metric_record,
+    finalize_metric_totals,
+    mask_to_rle_object,
+    metric_totals,
+    polygon_to_rle,
+    pq_stats_rle,
 )
 
 
@@ -234,9 +241,8 @@ def edge_target(mask: torch.Tensor) -> torch.Tensor:
 
 
 @torch.no_grad()
-def predict(model, dataset: FullImageDataset, device: torch.device) -> dict[str, np.ndarray]:
+def iter_probabilities(model, dataset: FullImageDataset, device: torch.device):
     model.eval()
-    output = {}
     for image, _, name in tqdm(DataLoader(dataset, batch_size=1, shuffle=False), desc="full-res inference"):
         image = image.to(device)
         with torch.cuda.amp.autocast(enabled=device.type == "cuda"):
@@ -253,18 +259,40 @@ def predict(model, dataset: FullImageDataset, device: torch.device) -> dict[str,
                 probability = total / weight.clamp_min(1)
             else:
                 probability = model(image)["mask"].sigmoid()[0, 0]
-        output[name[0]] = probability.cpu().numpy().astype(np.float16)
-    return output
+        yield name[0], probability.cpu().numpy().astype(np.float16)
 
 
-def tune(coco: dict, records: pd.DataFrame, probabilities: dict[str, np.ndarray], frozen: dict | None = None):
+def tune_stream(coco: dict, records: pd.DataFrame, probabilities, frozen: dict | None = None):
     configs = [(threshold, area) for threshold in (0.35, 0.45, 0.50, 0.55, 0.65) for area in (100, 200, 300)]
     if frozen:
         configs = [(float(frozen["mask_threshold"]), int(frozen["min_area"]))]
-    rows = []
-    for threshold, area in tqdm(configs, desc="semantic PQ grid"):
-        predictions = {name: connected_instances(probability, threshold, area) for name, probability in probabilities.items()}
-        rows.append({"mask_threshold": threshold, "min_area": area, **pooled_pq(coco, records, predictions)})
+    images, annotations, _ = annotation_maps(coco)
+    records_by_name = {
+        name: list(group.itertuples(index=False)) for name, group in records.groupby("file_name")
+    }
+    totals = [metric_totals() for _ in configs]
+    for name, probability in probabilities:
+        record_rows = records_by_name.get(name, [])
+        ground_truth_sets = []
+        for row in record_rows:
+            info = images[str(row.image_id)]
+            ground_truth_sets.append([
+                polygon_to_rle(item["segmentation"], int(info["height"]), int(info["width"]))
+                for item in annotations[str(row.image_id)]
+            ])
+        for config_index, (threshold, area) in enumerate(configs):
+            masks = connected_instances(probability, threshold, area)
+            pred_rles = [mask_to_rle_object(mask) for mask in masks]
+            del masks
+            for ground_truth in ground_truth_sets:
+                accumulate_metric_record(totals[config_index], pq_stats_rle(ground_truth, pred_rles))
+            del pred_rles
+        del ground_truth_sets
+        del probability
+    rows = [
+        {"mask_threshold": threshold, "min_area": area, **finalize_metric_totals(total)}
+        for (threshold, area), total in zip(configs, totals)
+    ]
     return pd.DataFrame(rows).sort_values("global_pq", ascending=False)
 
 
@@ -331,9 +359,13 @@ def main() -> None:
                 scaler.step(optimizer); scaler.update()
                 if scheduler is not None: scheduler.step()
                 total += float(loss.item())
-            probabilities = predict(model, validation, device)
-            predictions = {name: connected_instances(probability, 0.5, 300) for name, probability in probabilities.items()}
-            metrics = pooled_pq(coco, manifest[manifest["split"] == "val"], predictions)
+            validation_ranking = tune_stream(
+                coco,
+                manifest[manifest["split"] == "val"],
+                iter_probabilities(model, validation, device),
+                frozen={"mask_threshold": 0.5, "min_area": 300},
+            )
+            metrics = validation_ranking.iloc[0].to_dict()
             print(f"epoch={epoch} loss={total/max(len(loader),1):.5f} val_pq={metrics['global_pq']:.6f}")
             if metrics["global_pq"] > best:
                 best = metrics["global_pq"]
@@ -347,9 +379,13 @@ def main() -> None:
         raise RuntimeError("Checkpoint was not trained with the shared 2048-pixel input protocol")
     model.load_state_dict(payload["model"])
     dataset = FullImageDataset(args.data_root, manifest, coco, args.split, cache_root, False)
-    probabilities = predict(model, dataset, device)
     frozen = json.loads(args.frozen_config.read_text()) if args.frozen_config else None
-    ranking = tune(coco, manifest[manifest["split"] == args.split], probabilities, frozen)
+    ranking = tune_stream(
+        coco,
+        manifest[manifest["split"] == args.split],
+        iter_probabilities(model, dataset, device),
+        frozen,
+    )
     ranking.to_csv(result_dir / f"{args.split}_pq.csv", index=False)
     best = ranking.iloc[0].to_dict()
     best.update({"model": args.model, "seed": args.seed, "input_size": INPUT_SIZE})
