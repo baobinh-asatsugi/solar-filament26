@@ -103,7 +103,12 @@ class CropDataset(Dataset):
 
 
 def iou_loss(logits, target):
-    probability = logits.sigmoid(); intersection = (probability * target).sum((1, 2, 3))
+    # Keep the reduction in FP32. A 256x256 crop has 65,536 pixels, which is
+    # already beyond float16's largest finite value (65,504). Summing mask
+    # probabilities under autocast can therefore overflow and poison the
+    # refiner even when the input and parameters are otherwise valid.
+    probability = logits.float().sigmoid(); target = target.float()
+    intersection = (probability * target).sum((1, 2, 3))
     union = probability.sum((1, 2, 3)) + target.sum((1, 2, 3)) - intersection
     return (1 - (intersection + 1) / (union + 1)).mean()
 
@@ -120,8 +125,9 @@ def infer(detector, refiner, image_root: Path, names: list[str], device: str):
             x0, y0, x1, y1 = expanded_box([box_tensor[0], box_tensor[1], box_tensor[2]-box_tensor[0], box_tensor[3]-box_tensor[1]])
             crop = cv2.resize(image[y0:y1, x0:x1], (CROP_SIZE, CROP_SIZE), interpolation=cv2.INTER_LINEAR)
             tensor = torch.from_numpy(crop).float()[None, None].to(torch_device) / 255.0
-            with torch.cuda.amp.autocast(enabled=torch_device.type == "cuda"):
-                probability = refiner(tensor).sigmoid()[0, 0].float().cpu().numpy()
+            # This small refiner is intentionally evaluated in FP32. Its
+            # activations can overflow FP16 on high-contrast solar crops.
+            probability = refiner(tensor).float().sigmoid()[0, 0].cpu().numpy()
             if not np.isfinite(probability).all():
                 raise FloatingPointError(f"Non-finite crop probability for {name}")
             probability = np.ascontiguousarray(probability, dtype=np.float32)
@@ -150,7 +156,7 @@ def tune(coco, records, cache, frozen=None):
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=("train-refiner", "eval"))
+    parser.add_argument("command", choices=("train-refiner", "check-refiner", "eval"))
     parser.add_argument("--data-root", type=Path, required=True); parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--artifact-root", type=Path, required=True); parser.add_argument("--seed", type=int, required=True)
     parser.add_argument("--detector", type=Path, required=True); parser.add_argument("--device", default="0")
@@ -175,11 +181,25 @@ def main() -> None:
             refiner.train(); total = 0.0; finite_batches = 0; skipped_batches = 0
             for image, target in tqdm(train_loader, desc=f"crop U-Net {epoch}/{args.epochs}"):
                 image, target = image.to(device), target.to(device); optimizer.zero_grad(set_to_none=True)
-                with torch.cuda.amp.autocast(enabled=device.type == "cuda"): loss = iou_loss(refiner(image), target)
+                # Keep the convolutional forward under AMP for memory, but
+                # iou_loss explicitly promotes logits and reductions to FP32.
+                with torch.cuda.amp.autocast(enabled=device.type == "cuda"):
+                    logits = refiner(image)
+                loss = iou_loss(logits, target)
                 if not torch.isfinite(loss):
                     optimizer.zero_grad(set_to_none=True); skipped_batches += 1
                     continue
-                scaler.scale(loss).backward(); scaler.step(optimizer); scaler.update(); total += float(loss.item())
+                scaler.scale(loss).backward()
+                scaler.unscale_(optimizer)
+                gradients_finite = all(
+                    parameter.grad is None or torch.isfinite(parameter.grad).all()
+                    for parameter in refiner.parameters()
+                )
+                if not gradients_finite:
+                    optimizer.zero_grad(set_to_none=True); scaler.update(); skipped_batches += 1
+                    continue
+                torch.nn.utils.clip_grad_norm_(refiner.parameters(), max_norm=5.0)
+                scaler.step(optimizer); scaler.update(); total += float(loss.item())
                 finite_batches += 1
             refiner.eval(); values = []
             with torch.no_grad():
@@ -195,6 +215,21 @@ def main() -> None:
                                           "crop_size": CROP_SIZE, "input_size": INPUT_SIZE}, checkpoint)
         return
     payload = torch.load(checkpoint, map_location=device); refiner.load_state_dict(payload["model"])
+    if args.command == "check-refiner":
+        if not all(torch.isfinite(parameter).all() for parameter in refiner.parameters()):
+            raise FloatingPointError(f"Non-finite parameter in {checkpoint}")
+        validation = CropDataset(args.data_root, manifest, coco, "val", False)
+        loader = DataLoader(validation, batch_size=16, shuffle=False, num_workers=args.workers)
+        refiner.eval()
+        with torch.no_grad():
+            for batch_index, (image, _) in enumerate(loader):
+                output = refiner(image.to(device))
+                if not torch.isfinite(output).all():
+                    raise FloatingPointError(
+                        f"Non-finite FP32 output in {checkpoint} at validation batch {batch_index}"
+                    )
+        print(f"Valid FP32 crop U-Net checkpoint: {checkpoint}")
+        return
     detector = RTDETR(str(args.detector)); names = sorted(manifest.loc[manifest["split"] == args.split, "file_name"].unique())
     cache = infer(detector, refiner, image_root, names, args.device)
     frozen = json.loads(args.frozen_config.read_text()) if args.frozen_config else None

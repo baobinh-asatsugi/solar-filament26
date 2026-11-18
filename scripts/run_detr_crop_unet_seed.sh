@@ -21,7 +21,14 @@ else
 fi
 COMMON=(--data-root "${DATA_ROOT}" --manifest "${MANIFEST}" --artifact-root "${ARTIFACT_ROOT}" --seed "${SEED}" --device "${GPU}" --detector "${DETECTOR}")
 if [[ -s "${REFINER}" ]]; then
-  echo "[detr_crop_unet seed ${SEED}] crop U-Net checkpoint exists; skipping refiner training"
+  echo "[detr_crop_unet seed ${SEED}] checking existing crop U-Net checkpoint in FP32"
+  if "${PYTHON}" "${PROJECT_ROOT}/baselines/detr_crop_unet.py" check-refiner "${COMMON[@]}"; then
+    echo "[detr_crop_unet seed ${SEED}] crop U-Net checkpoint is valid; skipping refiner training"
+  else
+    echo "[detr_crop_unet seed ${SEED}] crop U-Net checkpoint is invalid; retraining refiner"
+    mv -f "${REFINER}" "${REFINER}.invalid"
+    "${PYTHON}" "${PROJECT_ROOT}/baselines/detr_crop_unet.py" train-refiner "${COMMON[@]}"
+  fi
 else
   "${PYTHON}" "${PROJECT_ROOT}/baselines/detr_crop_unet.py" train-refiner "${COMMON[@]}"
 fi
