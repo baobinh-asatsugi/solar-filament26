@@ -18,9 +18,16 @@ from tqdm import tqdm
 from ultralytics import RTDETR
 from pycocotools import mask as mask_utils
 
-from baselines.common import INPUT_SIZE, load_problem, pooled_pq, resolve_scored_masks, write_result
+from baselines.common import INPUT_SIZE, annotation_maps, load_problem, write_result
 from filament.data.annotators import select_annotation_records
-from filament.postprocess import mask_to_rle_object
+from filament.postprocess import (
+    accumulate_metric_record,
+    finalize_metric_totals,
+    mask_to_rle_object,
+    metric_totals,
+    polygon_to_rle,
+    pq_stats_rle,
+)
 
 
 CROP_SIZE = 256
@@ -138,19 +145,68 @@ def infer(detector, refiner, image_root: Path, names: list[str], device: str):
     return cache
 
 
+def resolve_scored_rles(items, score_threshold: float, min_area: int):
+    """Resolve one image at a time and return compact RLE predictions.
+
+    Decoding every proposal for every validation image at once requires several
+    gigabytes at 2048x2048. Keeping only one source mask plus the occupied map
+    bounds peak host RAM independently of the number of images/proposals.
+    """
+    occupied = np.zeros((INPUT_SIZE, INPUT_SIZE), dtype=bool)
+    output = []
+    for score, encoded in sorted(items, key=lambda pair: -pair[0]):
+        if score < score_threshold:
+            continue
+        source = mask_utils.decode(encoded).astype(bool)
+        mask = source & ~occupied
+        del source
+        count, labels, stats, _ = cv2.connectedComponentsWithStats(
+            mask.astype(np.uint8), connectivity=8
+        )
+        if count > 2:
+            index = 1 + int(np.argmax(stats[1:, cv2.CC_STAT_AREA]))
+            mask = labels == index
+        del labels, stats
+        if int(mask.sum()) < min_area:
+            del mask
+            continue
+        occupied |= mask
+        output.append(mask_to_rle_object(mask))
+        del mask
+    return output
+
+
 def tune(coco, records, cache, frozen=None):
     configs = [(score, area) for score in (0.10, 0.15, 0.20, 0.25, 0.30, 0.40) for area in (100, 200, 300)]
     if frozen:
         configs = [(float(frozen["score_threshold"]), int(frozen["min_area"]))]
+    images, annotations, _ = annotation_maps(coco)
+    records_by_name = {
+        name: list(group.itertuples(index=False)) for name, group in records.groupby("file_name")
+    }
+    ground_truth_by_name = {}
+    for name, record_rows in records_by_name.items():
+        ground_truth_by_name[name] = []
+        for row in record_rows:
+            info = images[str(row.image_id)]
+            ground_truth_by_name[name].append([
+                polygon_to_rle(item["segmentation"], int(info["height"]), int(info["width"]))
+                for item in annotations[str(row.image_id)]
+            ])
+
     rows = []
     for score, area in tqdm(configs, desc="DETR crop PQ grid"):
-        predictions = {
-            name: resolve_scored_masks(
-                [(value, mask_utils.decode(rle).astype(bool)) for value, rle in items], score, area
-            )
-            for name, items in cache.items()
-        }
-        rows.append({"score_threshold": score, "min_area": area, **pooled_pq(coco, records, predictions)})
+        totals = metric_totals()
+        for name, items in cache.items():
+            prediction_rles = resolve_scored_rles(items, score, area)
+            for ground_truth in ground_truth_by_name.get(name, []):
+                accumulate_metric_record(totals, pq_stats_rle(ground_truth, prediction_rles))
+            del prediction_rles
+        rows.append({
+            "score_threshold": score,
+            "min_area": area,
+            **finalize_metric_totals(totals),
+        })
     return pd.DataFrame(rows).sort_values("global_pq", ascending=False)
 
 
