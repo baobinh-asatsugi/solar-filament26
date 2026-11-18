@@ -121,7 +121,10 @@ def infer(detector, refiner, image_root: Path, names: list[str], device: str):
             crop = cv2.resize(image[y0:y1, x0:x1], (CROP_SIZE, CROP_SIZE), interpolation=cv2.INTER_LINEAR)
             tensor = torch.from_numpy(crop).float()[None, None].to(torch_device) / 255.0
             with torch.cuda.amp.autocast(enabled=torch_device.type == "cuda"):
-                probability = refiner(tensor).sigmoid()[0, 0].cpu().numpy()
+                probability = refiner(tensor).sigmoid()[0, 0].float().cpu().numpy()
+            if not np.isfinite(probability).all():
+                raise FloatingPointError(f"Non-finite crop probability for {name}")
+            probability = np.ascontiguousarray(probability, dtype=np.float32)
             local = cv2.resize(probability, (x1-x0, y1-y0), interpolation=cv2.INTER_LINEAR) >= 0.5
             mask = np.zeros((INPUT_SIZE, INPUT_SIZE), bool); mask[y0:y1, x0:x1] = local
             items.append((float(score_tensor), mask_to_rle_object(mask)))
@@ -169,17 +172,25 @@ def main() -> None:
         optimizer = torch.optim.Adam(refiner.parameters(), lr=1e-3); best = float("inf")
         scaler = torch.cuda.amp.GradScaler(enabled=device.type == "cuda")
         for epoch in range(1, args.epochs + 1):
-            refiner.train(); total = 0.0
+            refiner.train(); total = 0.0; finite_batches = 0; skipped_batches = 0
             for image, target in tqdm(train_loader, desc=f"crop U-Net {epoch}/{args.epochs}"):
                 image, target = image.to(device), target.to(device); optimizer.zero_grad(set_to_none=True)
                 with torch.cuda.amp.autocast(enabled=device.type == "cuda"): loss = iou_loss(refiner(image), target)
+                if not torch.isfinite(loss):
+                    optimizer.zero_grad(set_to_none=True); skipped_batches += 1
+                    continue
                 scaler.scale(loss).backward(); scaler.step(optimizer); scaler.update(); total += float(loss.item())
+                finite_batches += 1
             refiner.eval(); values = []
             with torch.no_grad():
                 for image, target in val_loader:
-                    values.append(float(iou_loss(refiner(image.to(device)), target.to(device)).item()))
-            value = float(np.mean(values)); print(f"epoch={epoch} train={total/max(len(train_loader),1):.6f} val_iou_loss={value:.6f}")
-            if value < best:
+                    candidate = float(iou_loss(refiner(image.to(device)), target.to(device)).item())
+                    if np.isfinite(candidate): values.append(candidate)
+            if not values:
+                raise FloatingPointError(f"No finite validation losses at epoch {epoch}")
+            value = float(np.mean(values))
+            print(f"epoch={epoch} train={total/max(finite_batches,1):.6f} val_iou_loss={value:.6f} skipped_nonfinite={skipped_batches}")
+            if np.isfinite(value) and value < best:
                 best = value; torch.save({"model": refiner.state_dict(), "seed": args.seed,
                                           "crop_size": CROP_SIZE, "input_size": INPUT_SIZE}, checkpoint)
         return

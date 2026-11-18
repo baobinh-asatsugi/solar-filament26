@@ -12,9 +12,26 @@ if [[ -s "${RESULT}/test_best.json" ]]; then
   echo "[detr_crop_unet seed ${SEED}] test result exists; skipping completed run"
   exit 0
 fi
-"${PYTHON}" "${PROJECT_ROOT}/baselines/train_rtdetr.py" --data "${DETECTION_DATA}" --artifact-root "${ARTIFACT_ROOT}" --seed "${SEED}" --device "${GPU}" --workers "${YOLO_WORKERS:-6}"
 DETECTOR="${ARTIFACT_ROOT}/runs/magfilo_v1_detr_crop_unet_detector_s${SEED}/weights/best.pt"
+REFINER="${ARTIFACT_ROOT}/baseline_work/magfilo_v1/detr_crop_unet/seed${SEED}/crop_unet_best.pt"
+if [[ -s "${DETECTOR}" ]]; then
+  echo "[detr_crop_unet seed ${SEED}] detector checkpoint exists; skipping RT-DETR training"
+else
+  "${PYTHON}" "${PROJECT_ROOT}/baselines/train_rtdetr.py" --data "${DETECTION_DATA}" --artifact-root "${ARTIFACT_ROOT}" --seed "${SEED}" --device "${GPU}" --workers "${YOLO_WORKERS:-6}"
+fi
 COMMON=(--data-root "${DATA_ROOT}" --manifest "${MANIFEST}" --artifact-root "${ARTIFACT_ROOT}" --seed "${SEED}" --device "${GPU}" --detector "${DETECTOR}")
-"${PYTHON}" "${PROJECT_ROOT}/baselines/detr_crop_unet.py" train-refiner "${COMMON[@]}"
-"${PYTHON}" "${PROJECT_ROOT}/baselines/detr_crop_unet.py" eval "${COMMON[@]}" --split val
-"${PYTHON}" "${PROJECT_ROOT}/baselines/detr_crop_unet.py" eval "${COMMON[@]}" --split test --frozen-config "${RESULT}/val_best.json"
+if [[ -s "${REFINER}" ]]; then
+  echo "[detr_crop_unet seed ${SEED}] crop U-Net checkpoint exists; skipping refiner training"
+else
+  "${PYTHON}" "${PROJECT_ROOT}/baselines/detr_crop_unet.py" train-refiner "${COMMON[@]}"
+fi
+if [[ -s "${RESULT}/val_best.json" ]]; then
+  echo "[detr_crop_unet seed ${SEED}] validation result exists; skipping val"
+else
+  "${PYTHON}" "${PROJECT_ROOT}/baselines/detr_crop_unet.py" eval "${COMMON[@]}" --split val
+fi
+if [[ -s "${RESULT}/test_best.json" ]]; then
+  echo "[detr_crop_unet seed ${SEED}] test result exists; skipping test"
+else
+  "${PYTHON}" "${PROJECT_ROOT}/baselines/detr_crop_unet.py" eval "${COMMON[@]}" --split test --frozen-config "${RESULT}/val_best.json"
+fi

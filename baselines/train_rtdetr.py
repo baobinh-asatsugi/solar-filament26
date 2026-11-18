@@ -21,6 +21,11 @@ def main() -> None:
     parser.add_argument("--workers", type=int, default=6)
     args = parser.parse_args()
     run_name = f"magfilo_v1_detr_crop_unet_detector_s{args.seed}"
+    run_dir = args.artifact_root / "runs" / run_name
+    best = run_dir / "weights" / "best.pt"
+    if best.is_file():
+        print(f"Existing RT-DETR checkpoint; skipping training: {best}")
+        return
     model = RTDETR("rtdetr-l.pt")
     model.train(
         data=str(args.data.resolve()), project=str((args.artifact_root / "runs").resolve()), name=run_name,
@@ -29,8 +34,6 @@ def main() -> None:
         save=True, save_period=-1,
         mosaic=0.0, mixup=0.0, translate=0.0, scale=0.1, fliplr=0.5, flipud=0.5,
     )
-    run_dir = args.artifact_root / "runs" / run_name
-    best = run_dir / "weights" / "best.pt"
     retain_only_best_checkpoint(run_dir, best)
     print(best)
 
