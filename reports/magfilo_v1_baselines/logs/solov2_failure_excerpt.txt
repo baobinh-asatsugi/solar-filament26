@@ -1,0 +1,300 @@
+index created!
+11/26 08:15:45 - mmengine - INFO - LR is set based on batch size of 16 and the current batch size is 1. Scaling the original LR by 0.0625.
+loading annotations into memory...
+Done (t=0.06s)
+creating index...
+index created!
+loading annotations into memory...
+Done (t=0.04s)
+creating index...
+index created!
+11/26 08:15:45 - mmengine - INFO - load model from: torchvision://resnet50
+11/26 08:15:45 - mmengine - INFO - Loads checkpoint by torchvision backend from path: torchvision://resnet50
+11/26 08:15:46 - mmengine - WARNING - The model and loaded state dict do not match exactly
+
+unexpected key in source state_dict: fc.weight, fc.bias
+
+11/26 08:15:46 - mmengine - WARNING - "FileClient" will be deprecated in future. Please use io functions in https://mmengine.readthedocs.io/en/latest/api/fileio.html#file-io
+11/26 08:15:46 - mmengine - WARNING - "HardDiskBackend" is the alias of "LocalBackend" and the former will be deprecated in future.
+11/26 08:15:46 - mmengine - INFO - Checkpoints will be saved to /mnt/users/u24vylt/ml26/outputs/baseline_work/magfilo_v1/solov2/seed3020.
+/mnt/users/u24vylt/.venv-mmdet/lib/python3.10/site-packages/torch/functional.py:504: UserWarning: torch.meshgrid: in an upcoming release, it will be required to pass the indexing argument. (Triggered internally at ../aten/src/ATen/native/TensorShape.cpp:3526.)
+  return _VF.meshgrid(tensors, **kwargs)  # type: ignore[attr-defined]
+11/26 08:16:10 - mmengine - INFO - Epoch(train)  [1][ 50/622]  lr: 6.1936e-05  eta: 0:59:18  time: 0.4800  data_time: 0.0689  memory: 7898  grad_norm: 42.8026  loss: 3.7717  loss_mask: 2.7520  loss_cls: 1.0197
+11/26 08:16:32 - mmengine - INFO - Epoch(train)  [1][100/622]  lr: 1.2450e-04  eta: 0:56:49  time: 0.4459  data_time: 0.0729  memory: 7788  grad_norm: 72.6387  loss: 3.1655  loss_mask: 2.5297  loss_cls: 0.6358
+11/26 08:16:54 - mmengine - INFO - Epoch(train)  [1][150/622]  lr: 1.8706e-04  eta: 0:55:35  time: 0.4421  data_time: 0.0715  memory: 7796  grad_norm: 61.5015  loss: 2.9944  loss_mask: 2.5252  loss_cls: 0.4693
+11/26 08:17:15 - mmengine - INFO - Epoch(train)  [1][200/622]  lr: 2.4962e-04  eta: 0:53:58  time: 0.4151  data_time: 0.0635  memory: 7910  grad_norm: 27.6275  loss: 3.0637  loss_mask: 2.6717  loss_cls: 0.3921
+11/26 08:17:36 - mmengine - INFO - Epoch(train)  [1][250/622]  lr: 3.1219e-04  eta: 0:53:11  time: 0.4290  data_time: 0.0681  memory: 7904  grad_norm: 25.7274  loss: 3.1745  loss_mask: 2.7696  loss_cls: 0.4049
+11/26 08:17:56 - mmengine - INFO - Epoch(train)  [1][300/622]  lr: 3.7475e-04  eta: 0:51:49  time: 0.3918  data_time: 0.0503  memory: 7892  grad_norm: 18.4429  loss: 3.1596  loss_mask: 2.7167  loss_cls: 0.4429
+11/26 08:18:18 - mmengine - INFO - Epoch(train)  [1][350/622]  lr: 4.3731e-04  eta: 0:51:35  time: 0.4417  data_time: 0.0690  memory: 7916  grad_norm: 19.8953  loss: 3.3510  loss_mask: 2.8267  loss_cls: 0.5243
+11/26 08:18:40 - mmengine - INFO - Epoch(train)  [1][400/622]  lr: 4.9987e-04  eta: 0:51:13  time: 0.4345  data_time: 0.0668  memory: 7898  grad_norm: 11.1178  loss: 3.0213  loss_mask: 2.7027  loss_cls: 0.3186
+11/26 08:19:04 - mmengine - INFO - Epoch(train)  [1][450/622]  lr: 5.6244e-04  eta: 0:51:24  time: 0.4781  data_time: 0.0746  memory: 7920  grad_norm: 10.6189  loss: 3.0420  loss_mask: 2.7128  loss_cls: 0.3292
+11/26 08:19:25 - mmengine - INFO - Epoch(train)  [1][500/622]  lr: 6.2500e-04  eta: 0:50:52  time: 0.4256  data_time: 0.0677  memory: 7904  grad_norm: 8.2441  loss: 3.0562  loss_mask: 2.7600  loss_cls: 0.2962
+11/26 08:19:47 - mmengine - INFO - Epoch(train)  [1][550/622]  lr: 6.2500e-04  eta: 0:50:29  time: 0.4357  data_time: 0.0643  memory: 7920  grad_norm: 7.2635  loss: 3.1020  loss_mask: 2.8212  loss_cls: 0.2808
+11/26 08:20:08 - mmengine - INFO - Epoch(train)  [1][600/622]  lr: 6.2500e-04  eta: 0:50:00  time: 0.4260  data_time: 0.0597  memory: 7893  grad_norm: 6.8156  loss: 3.1456  loss_mask: 2.8270  loss_cls: 0.3186
+11/26 08:20:17 - mmengine - INFO - Exp name: solov2_r50_fpn_1x_coco_20261126_081542
+11/26 08:20:17 - mmengine - INFO - Saving checkpoint at 1 epochs
+11/26 08:20:36 - mmengine - INFO - Epoch(val)  [1][ 50/247]    eta: 0:01:12  time: 0.3663  data_time: 0.2560  memory: 7913  
+11/26 08:20:53 - mmengine - INFO - Epoch(val)  [1][100/247]    eta: 0:00:52  time: 0.3436  data_time: 0.2382  memory: 1743  
+11/26 08:21:12 - mmengine - INFO - Epoch(val)  [1][150/247]    eta: 0:00:34  time: 0.3673  data_time: 0.2622  memory: 1743  
+11/26 08:21:20 - mmengine - INFO - Epoch(val)  [1][200/247]    eta: 0:00:14  time: 0.1732  data_time: 0.0691  memory: 1743  
+11/26 08:21:28 - mmengine - INFO - Evaluating segm...
+Loading and preparing results...
+11/26 08:21:28 - mmengine - ERROR - /mnt/users/u24vylt/.venv-mmdet/lib/python3.10/site-packages/mmdet/evaluation/metrics/coco_metric.py - compute_metrics - 465 - The testing results of the whole dataset is empty.
+11/26 08:21:28 - mmengine - INFO - Epoch(val) [1][247/247]    data_time: 0.1783  time: 0.2840
+11/26 08:21:28 - mmengine - WARNING - Since `metrics` is an empty dict, the behavior to save the best checkpoint will be skipped in this evaluation.
+11/26 08:21:49 - mmengine - INFO - Epoch(train)  [2][ 50/622]  lr: 6.2500e-04  eta: 0:49:14  time: 0.4192  data_time: 0.0586  memory: 7912  grad_norm: 7.0810  loss: 3.1876  loss_mask: 2.8972  loss_cls: 0.2904
+11/26 08:22:13 - mmengine - INFO - Epoch(train)  [2][100/622]  lr: 6.2500e-04  eta: 0:49:08  time: 0.4683  data_time: 0.0685  memory: 7911  grad_norm: 5.8712  loss: 3.0886  loss_mask: 2.8216  loss_cls: 0.2670
+11/26 08:22:34 - mmengine - INFO - Epoch(train)  [2][150/622]  lr: 6.2500e-04  eta: 0:48:45  time: 0.4347  data_time: 0.0598  memory: 7894  grad_norm: 5.3073  loss: 3.1321  loss_mask: 2.8815  loss_cls: 0.2506
+11/26 08:22:56 - mmengine - INFO - Epoch(train)  [2][200/622]  lr: 6.2500e-04  eta: 0:48:21  time: 0.4318  data_time: 0.0585  memory: 7919  grad_norm: 4.5766  loss: 3.1027  loss_mask: 2.8814  loss_cls: 0.2213
+11/26 08:23:16 - mmengine - INFO - Epoch(train)  [2][250/622]  lr: 6.2500e-04  eta: 0:47:49  time: 0.4090  data_time: 0.0507  memory: 7903  grad_norm: 6.1848  loss: 2.6457  loss_mask: 2.4061  loss_cls: 0.2396
+11/26 08:23:38 - mmengine - INFO - Epoch(train)  [2][300/622]  lr: 6.2500e-04  eta: 0:47:28  time: 0.4385  data_time: 0.0579  memory: 7900  grad_norm: 6.5736  loss: 3.0225  loss_mask: 2.7015  loss_cls: 0.3210
+11/26 08:24:02 - mmengine - INFO - Epoch(train)  [2][350/622]  lr: 6.2500e-04  eta: 0:47:20  time: 0.4771  data_time: 0.0694  memory: 7904  grad_norm: 6.4225  loss: 3.1567  loss_mask: 2.8833  loss_cls: 0.2733
+11/26 08:24:16 - mmengine - INFO - Exp name: solov2_r50_fpn_1x_coco_20261126_081542
+11/26 08:24:26 - mmengine - INFO - Epoch(train)  [2][400/622]  lr: 6.2500e-04  eta: 0:47:09  time: 0.4728  data_time: 0.0730  memory: 7908  grad_norm: 5.1771  loss: 3.1354  loss_mask: 2.8858  loss_cls: 0.2496
+11/26 08:24:47 - mmengine - INFO - Epoch(train)  [2][450/622]  lr: 6.2500e-04  eta: 0:46:41  time: 0.4182  data_time: 0.0559  memory: 7922  grad_norm: 9.3236  loss: 3.1519  loss_mask: 2.7013  loss_cls: 0.4506
+11/26 08:25:09 - mmengine - INFO - Epoch(train)  [2][500/622]  lr: 6.2500e-04  eta: 0:46:24  time: 0.4545  data_time: 0.0649  memory: 7890  grad_norm: 7.1476  loss: 3.1646  loss_mask: 2.8304  loss_cls: 0.3342
+11/26 08:25:33 - mmengine - INFO - Epoch(train)  [2][550/622]  lr: 6.2500e-04  eta: 0:46:08  time: 0.4630  data_time: 0.0698  memory: 7892  grad_norm: 4.2508  loss: 3.0038  loss_mask: 2.7635  loss_cls: 0.2403
+11/26 08:25:52 - mmengine - INFO - Epoch(train)  [2][600/622]  lr: 6.2500e-04  eta: 0:45:33  time: 0.3868  data_time: 0.0429  memory: 7919  grad_norm: 5.1985  loss: 2.7505  loss_mask: 2.5350  loss_cls: 0.2155
+11/26 08:26:03 - mmengine - INFO - Exp name: solov2_r50_fpn_1x_coco_20261126_081542
+11/26 08:26:03 - mmengine - INFO - Saving checkpoint at 2 epochs
+11/26 08:26:19 - mmengine - INFO - Epoch(val)  [2][ 50/247]    eta: 0:01:00  time: 0.3063  data_time: 0.1994  memory: 7783  
+11/26 08:26:36 - mmengine - INFO - Epoch(val)  [2][100/247]    eta: 0:00:48  time: 0.3494  data_time: 0.2433  memory: 1897  
+11/26 08:26:52 - mmengine - INFO - Epoch(val)  [2][150/247]    eta: 0:00:31  time: 0.3256  data_time: 0.2195  memory: 1849  
+11/26 08:27:01 - mmengine - INFO - Epoch(val)  [2][200/247]    eta: 0:00:13  time: 0.1727  data_time: 0.0677  memory: 1743  
+11/26 08:27:08 - mmengine - INFO - Evaluating segm...
+Loading and preparing results...
+11/26 08:27:08 - mmengine - ERROR - /mnt/users/u24vylt/.venv-mmdet/lib/python3.10/site-packages/mmdet/evaluation/metrics/coco_metric.py - compute_metrics - 465 - The testing results of the whole dataset is empty.
+11/26 08:27:08 - mmengine - INFO - Epoch(val) [2][247/247]    data_time: 0.1572  time: 0.2628
+11/26 08:27:29 - mmengine - INFO - Epoch(train)  [3][ 50/622]  lr: 6.2500e-04  eta: 0:45:01  time: 0.4138  data_time: 0.0617  memory: 7911  grad_norm: 5.5778  loss: 2.9079  loss_mask: 2.6482  loss_cls: 0.2597
+11/26 08:27:51 - mmengine - INFO - Epoch(train)  [3][100/622]  lr: 6.2500e-04  eta: 0:44:39  time: 0.4377  data_time: 0.0595  memory: 7649  grad_norm: 4.7943  loss: 3.1517  loss_mask: 2.9127  loss_cls: 0.2390
+11/26 08:28:13 - mmengine - INFO - Epoch(train)  [3][150/622]  lr: 6.2500e-04  eta: 0:44:18  time: 0.4435  data_time: 0.0644  memory: 7898  grad_norm: 7.8911  loss: 3.0416  loss_mask: 2.7000  loss_cls: 0.3416
+11/26 08:28:35 - mmengine - INFO - Epoch(train)  [3][200/622]  lr: 6.2500e-04  eta: 0:43:56  time: 0.4382  data_time: 0.0627  memory: 7904  grad_norm: 3.5308  loss: 2.9104  loss_mask: 2.7000  loss_cls: 0.2104
+11/26 08:28:59 - mmengine - INFO - Epoch(train)  [3][250/622]  lr: 6.2500e-04  eta: 0:43:43  time: 0.4789  data_time: 0.0766  memory: 7904  grad_norm: 3.9612  loss: 3.0423  loss_mask: 2.8302  loss_cls: 0.2120
+11/26 08:29:19 - mmengine - INFO - Epoch(train)  [3][300/622]  lr: 6.2500e-04  eta: 0:43:12  time: 0.3923  data_time: 0.0475  memory: 7919  grad_norm: 4.4026  loss: 3.0557  loss_mask: 2.8233  loss_cls: 0.2324
+11/26 08:29:41 - mmengine - INFO - Epoch(train)  [3][350/622]  lr: 6.2500e-04  eta: 0:42:51  time: 0.4475  data_time: 0.0652  memory: 7919  grad_norm: 6.7633  loss: 3.0618  loss_mask: 2.7630  loss_cls: 0.2988
+11/26 08:30:03 - mmengine - INFO - Epoch(train)  [3][400/622]  lr: 6.2500e-04  eta: 0:42:30  time: 0.4418  data_time: 0.0673  memory: 7903  grad_norm: 6.6037  loss: 3.1361  loss_mask: 2.8232  loss_cls: 0.3129
+11/26 08:30:23 - mmengine - INFO - Epoch(train)  [3][450/622]  lr: 6.2500e-04  eta: 0:42:01  time: 0.3930  data_time: 0.0460  memory: 7777  grad_norm: 4.5466  loss: 3.0553  loss_mask: 2.8214  loss_cls: 0.2339
+11/26 08:30:45 - mmengine - INFO - Epoch(train)  [3][500/622]  lr: 6.2500e-04  eta: 0:41:41  time: 0.4493  data_time: 0.0688  memory: 7908  grad_norm: 4.1020  loss: 2.8005  loss_mask: 2.5835  loss_cls: 0.2170
+11/26 08:31:06 - mmengine - INFO - Epoch(train)  [3][550/622]  lr: 6.2500e-04  eta: 0:41:16  time: 0.4174  data_time: 0.0581  memory: 7922  grad_norm: 4.6231  loss: 2.9490  loss_mask: 2.7032  loss_cls: 0.2458
+11/26 08:31:28 - mmengine - INFO - Epoch(train)  [3][600/622]  lr: 6.2500e-04  eta: 0:40:55  time: 0.4471  data_time: 0.0631  memory: 7664  grad_norm: 3.5849  loss: 3.0923  loss_mask: 2.8829  loss_cls: 0.2094
+11/26 08:31:38 - mmengine - INFO - Exp name: solov2_r50_fpn_1x_coco_20261126_081542
+11/26 08:31:38 - mmengine - INFO - Saving checkpoint at 3 epochs
+11/26 08:31:55 - mmengine - INFO - Epoch(val)  [3][ 50/247]    eta: 0:01:01  time: 0.3128  data_time: 0.2077  memory: 7913  
+11/26 08:32:13 - mmengine - INFO - Epoch(val)  [3][100/247]    eta: 0:00:48  time: 0.3530  data_time: 0.2480  memory: 1878  
+11/26 08:32:29 - mmengine - INFO - Epoch(val)  [3][150/247]    eta: 0:00:32  time: 0.3263  data_time: 0.2217  memory: 1790  
+11/26 08:32:37 - mmengine - INFO - Epoch(val)  [3][200/247]    eta: 0:00:13  time: 0.1658  data_time: 0.0620  memory: 1743  
+11/26 08:32:45 - mmengine - INFO - Evaluating segm...
+Loading and preparing results...
+11/26 08:32:45 - mmengine - ERROR - /mnt/users/u24vylt/.venv-mmdet/lib/python3.10/site-packages/mmdet/evaluation/metrics/coco_metric.py - compute_metrics - 465 - The testing results of the whole dataset is empty.
+11/26 08:32:45 - mmengine - INFO - Epoch(val) [3][247/247]    data_time: 0.1596  time: 0.2641
+11/26 08:33:07 - mmengine - INFO - Epoch(train)  [4][ 50/622]  lr: 6.2500e-04  eta: 0:40:25  time: 0.4400  data_time: 0.0722  memory: 7911  grad_norm: 6.5922  loss: 3.1033  loss_mask: 2.8234  loss_cls: 0.2799
+11/26 08:33:31 - mmengine - INFO - Epoch(train)  [4][100/622]  lr: 6.2500e-04  eta: 0:40:09  time: 0.4792  data_time: 0.0811  memory: 7659  grad_norm: 3.8924  loss: 3.0583  loss_mask: 2.8366  loss_cls: 0.2217
+11/26 08:33:45 - mmengine - INFO - Exp name: solov2_r50_fpn_1x_coco_20261126_081542
+11/26 08:33:51 - mmengine - INFO - Epoch(train)  [4][150/622]  lr: 6.2500e-04  eta: 0:39:43  time: 0.4072  data_time: 0.0598  memory: 7904  grad_norm: 3.5872  loss: 2.9784  loss_mask: 2.7761  loss_cls: 0.2023
+11/26 08:34:12 - mmengine - INFO - Epoch(train)  [4][200/622]  lr: 6.2500e-04  eta: 0:39:18  time: 0.4143  data_time: 0.0614  memory: 7892  grad_norm: 3.6168  loss: 3.0065  loss_mask: 2.8200  loss_cls: 0.1865
+11/26 08:34:34 - mmengine - INFO - Epoch(train)  [4][250/622]  lr: 6.2500e-04  eta: 0:38:57  time: 0.4395  data_time: 0.0624  memory: 7688  grad_norm: 4.0482  loss: 2.8752  loss_mask: 2.6596  loss_cls: 0.2155
+11/26 08:34:56 - mmengine - INFO - Epoch(train)  [4][300/622]  lr: 6.2500e-04  eta: 0:38:35  time: 0.4414  data_time: 0.0663  memory: 7919  grad_norm: 4.0505  loss: 3.1538  loss_mask: 2.9455  loss_cls: 0.2083
+11/26 08:35:18 - mmengine - INFO - Epoch(train)  [4][350/622]  lr: 6.2500e-04  eta: 0:38:14  time: 0.4442  data_time: 0.0656  memory: 7904  grad_norm: 5.6410  loss: 3.0961  loss_mask: 2.8200  loss_cls: 0.2761
+11/26 08:35:39 - mmengine - INFO - Epoch(train)  [4][400/622]  lr: 6.2500e-04  eta: 0:37:49  time: 0.4102  data_time: 0.0565  memory: 7910  grad_norm: 4.2448  loss: 2.9735  loss_mask: 2.7613  loss_cls: 0.2122
+11/26 08:36:00 - mmengine - INFO - Epoch(train)  [4][450/622]  lr: 6.2500e-04  eta: 0:37:26  time: 0.4218  data_time: 0.0585  memory: 7920  grad_norm: 5.1287  loss: 3.1679  loss_mask: 2.8867  loss_cls: 0.2812
+11/26 08:36:20 - mmengine - INFO - Epoch(train)  [4][500/622]  lr: 6.2500e-04  eta: 0:37:00  time: 0.3999  data_time: 0.0482  memory: 7658  grad_norm: 5.4196  loss: 2.8651  loss_mask: 2.6427  loss_cls: 0.2224
+11/26 08:36:43 - mmengine - INFO - Epoch(train)  [4][550/622]  lr: 6.2500e-04  eta: 0:36:42  time: 0.4680  data_time: 0.0704  memory: 7788  grad_norm: 4.7555  loss: 2.9425  loss_mask: 2.7000  loss_cls: 0.2425
+11/26 08:37:06 - mmengine - INFO - Epoch(train)  [4][600/622]  lr: 6.2500e-04  eta: 0:36:21  time: 0.4506  data_time: 0.0631  memory: 7908  grad_norm: 5.5731  loss: 3.0228  loss_mask: 2.7645  loss_cls: 0.2583
+11/26 08:37:15 - mmengine - INFO - Exp name: solov2_r50_fpn_1x_coco_20261126_081542
+11/26 08:37:15 - mmengine - INFO - Saving checkpoint at 4 epochs
+11/26 08:37:32 - mmengine - INFO - Epoch(val)  [4][ 50/247]    eta: 0:01:03  time: 0.3211  data_time: 0.2164  memory: 7919  
+11/26 08:37:51 - mmengine - INFO - Epoch(val)  [4][100/247]    eta: 0:00:50  time: 0.3709  data_time: 0.2659  memory: 1914  
+11/26 08:38:08 - mmengine - INFO - Epoch(val)  [4][150/247]    eta: 0:00:33  time: 0.3403  data_time: 0.2355  memory: 1855  
+11/26 08:38:16 - mmengine - INFO - Epoch(val)  [4][200/247]    eta: 0:00:14  time: 0.1723  data_time: 0.0682  memory: 1743  
+11/26 08:38:23 - mmengine - INFO - Evaluating segm...
+Loading and preparing results...
+11/26 08:38:23 - mmengine - ERROR - /mnt/users/u24vylt/.venv-mmdet/lib/python3.10/site-packages/mmdet/evaluation/metrics/coco_metric.py - compute_metrics - 465 - The testing results of the whole dataset is empty.
+11/26 08:38:23 - mmengine - INFO - Epoch(val) [4][247/247]    data_time: 0.1680  time: 0.2725
+11/26 08:38:45 - mmengine - INFO - Epoch(train)  [5][ 50/622]  lr: 6.2500e-04  eta: 0:35:50  time: 0.4361  data_time: 0.0841  memory: 7910  grad_norm: 3.8498  loss: 2.9759  loss_mask: 2.7699  loss_cls: 0.2061
+11/26 08:39:06 - mmengine - INFO - Epoch(train)  [5][100/622]  lr: 6.2500e-04  eta: 0:35:26  time: 0.4154  data_time: 0.0641  memory: 7653  grad_norm: 3.9162  loss: 2.9755  loss_mask: 2.7727  loss_cls: 0.2027
+11/26 08:39:28 - mmengine - INFO - Epoch(train)  [5][150/622]  lr: 6.2500e-04  eta: 0:35:04  time: 0.4399  data_time: 0.0734  memory: 7911  grad_norm: 4.5627  loss: 2.9360  loss_mask: 2.7061  loss_cls: 0.2299
+11/26 08:39:48 - mmengine - INFO - Epoch(train)  [5][200/622]  lr: 6.2500e-04  eta: 0:34:40  time: 0.4054  data_time: 0.0609  memory: 7919  grad_norm: 5.6962  loss: 3.0134  loss_mask: 2.7600  loss_cls: 0.2534
+11/26 08:40:10 - mmengine - INFO - Epoch(train)  [5][250/622]  lr: 6.2500e-04  eta: 0:34:17  time: 0.4244  data_time: 0.0654  memory: 7920  grad_norm: 5.8326  loss: 3.1533  loss_mask: 2.8832  loss_cls: 0.2700
+11/26 08:40:29 - mmengine - INFO - Epoch(train)  [5][300/622]  lr: 6.2500e-04  eta: 0:33:52  time: 0.3969  data_time: 0.0563  memory: 7658  grad_norm: 3.7872  loss: 2.9440  loss_mask: 2.7150  loss_cls: 0.2290
+11/26 08:40:49 - mmengine - INFO - Epoch(train)  [5][350/622]  lr: 6.2500e-04  eta: 0:33:27  time: 0.3916  data_time: 0.0524  memory: 7892  grad_norm: 3.7741  loss: 3.0143  loss_mask: 2.8226  loss_cls: 0.1918
+11/26 08:41:09 - mmengine - INFO - Epoch(train)  [5][400/622]  lr: 6.2500e-04  eta: 0:33:03  time: 0.4065  data_time: 0.0595  memory: 7908  grad_norm: 3.8076  loss: 2.8930  loss_mask: 2.7030  loss_cls: 0.1900
+11/26 08:41:30 - mmengine - INFO - Epoch(train)  [5][450/622]  lr: 6.2500e-04  eta: 0:32:40  time: 0.4123  data_time: 0.0647  memory: 7788  grad_norm: 3.8771  loss: 2.7864  loss_mask: 2.5863  loss_cls: 0.2001
+11/26 08:41:52 - mmengine - INFO - Epoch(train)  [5][500/622]  lr: 6.2500e-04  eta: 0:32:18  time: 0.4325  data_time: 0.0708  memory: 7898  grad_norm: 3.7133  loss: 3.2091  loss_mask: 3.0067  loss_cls: 0.2025
+11/26 08:41:57 - mmengine - INFO - Exp name: solov2_r50_fpn_1x_coco_20261126_081542
+11/26 08:42:13 - mmengine - INFO - Epoch(train)  [5][550/622]  lr: 6.2500e-04  eta: 0:31:56  time: 0.4296  data_time: 0.0669  memory: 7919  grad_norm: 3.4762  loss: 2.9013  loss_mask: 2.7031  loss_cls: 0.1982
+11/26 08:42:34 - mmengine - INFO - Epoch(train)  [5][600/622]  lr: 6.2500e-04  eta: 0:31:33  time: 0.4167  data_time: 0.0648  memory: 7796  grad_norm: 3.8808  loss: 3.0164  loss_mask: 2.8280  loss_cls: 0.1884
+11/26 08:42:43 - mmengine - INFO - Exp name: solov2_r50_fpn_1x_coco_20261126_081542
+11/26 08:42:43 - mmengine - INFO - Saving checkpoint at 5 epochs
+11/26 08:42:57 - mmengine - INFO - Epoch(val)  [5][ 50/247]    eta: 0:00:53  time: 0.2727  data_time: 0.1678  memory: 7643  
+11/26 08:43:13 - mmengine - INFO - Epoch(val)  [5][100/247]    eta: 0:00:43  time: 0.3174  data_time: 0.2121  memory: 1897  
+11/26 08:43:29 - mmengine - INFO - Epoch(val)  [5][150/247]    eta: 0:00:29  time: 0.3156  data_time: 0.2107  memory: 1790  
+11/26 08:43:38 - mmengine - INFO - Epoch(val)  [5][200/247]    eta: 0:00:12  time: 0.1826  data_time: 0.0783  memory: 1743  
+11/26 08:43:45 - mmengine - INFO - Evaluating segm...
+Loading and preparing results...
+11/26 08:43:45 - mmengine - ERROR - /mnt/users/u24vylt/.venv-mmdet/lib/python3.10/site-packages/mmdet/evaluation/metrics/coco_metric.py - compute_metrics - 465 - The testing results of the whole dataset is empty.
+11/26 08:43:45 - mmengine - INFO - Epoch(val) [5][247/247]    data_time: 0.1441  time: 0.2486
+11/26 08:44:06 - mmengine - INFO - Epoch(train)  [6][ 50/622]  lr: 6.2500e-04  eta: 0:31:01  time: 0.4226  data_time: 0.0658  memory: 7916  grad_norm: 3.6929  loss: 3.0174  loss_mask: 2.8223  loss_cls: 0.1951
+11/26 08:44:28 - mmengine - INFO - Epoch(train)  [6][100/622]  lr: 6.2500e-04  eta: 0:30:39  time: 0.4352  data_time: 0.0666  memory: 7919  grad_norm: 5.1350  loss: 2.8804  loss_mask: 2.6504  loss_cls: 0.2300
+11/26 08:44:49 - mmengine - INFO - Epoch(train)  [6][150/622]  lr: 6.2500e-04  eta: 0:30:17  time: 0.4283  data_time: 0.0638  memory: 7910  grad_norm: 4.0223  loss: 2.8947  loss_mask: 2.6464  loss_cls: 0.2484
+11/26 08:45:11 - mmengine - INFO - Epoch(train)  [6][200/622]  lr: 6.2500e-04  eta: 0:29:56  time: 0.4321  data_time: 0.0659  memory: 7900  grad_norm: 3.6617  loss: 3.0826  loss_mask: 2.8800  loss_cls: 0.2026
+11/26 08:45:31 - mmengine - INFO - Epoch(train)  [6][250/622]  lr: 6.2500e-04  eta: 0:29:32  time: 0.3970  data_time: 0.0576  memory: 7893  grad_norm: 3.6413  loss: 3.0656  loss_mask: 2.8817  loss_cls: 0.1839
+11/26 08:45:52 - mmengine - INFO - Epoch(train)  [6][300/622]  lr: 6.2500e-04  eta: 0:29:09  time: 0.4165  data_time: 0.0651  memory: 7654  grad_norm: 3.8091  loss: 2.9087  loss_mask: 2.7119  loss_cls: 0.1968
+11/26 08:46:13 - mmengine - INFO - Epoch(train)  [6][350/622]  lr: 6.2500e-04  eta: 0:28:47  time: 0.4213  data_time: 0.0650  memory: 7908  grad_norm: 3.8008  loss: 3.0194  loss_mask: 2.8212  loss_cls: 0.1982
+11/26 08:46:34 - mmengine - INFO - Epoch(train)  [6][400/622]  lr: 6.2500e-04  eta: 0:28:25  time: 0.4274  data_time: 0.0654  memory: 7922  grad_norm: 3.5135  loss: 3.0733  loss_mask: 2.8832  loss_cls: 0.1900
+11/26 08:46:56 - mmengine - INFO - Epoch(train)  [6][450/622]  lr: 6.2500e-04  eta: 0:28:04  time: 0.4413  data_time: 0.0678  memory: 7663  grad_norm: 4.0254  loss: 3.0711  loss_mask: 2.8832  loss_cls: 0.1879
+11/26 08:47:16 - mmengine - INFO - Epoch(train)  [6][500/622]  lr: 6.2500e-04  eta: 0:27:40  time: 0.3868  data_time: 0.0538  memory: 7904  grad_norm: 5.1823  loss: 2.8237  loss_mask: 2.5856  loss_cls: 0.2380
+11/26 08:47:36 - mmengine - INFO - Epoch(train)  [6][550/622]  lr: 6.2500e-04  eta: 0:27:18  time: 0.4162  data_time: 0.0653  memory: 7911  grad_norm: 3.5655  loss: 2.8175  loss_mask: 2.6412  loss_cls: 0.1763
+11/26 08:47:57 - mmengine - INFO - Epoch(train)  [6][600/622]  lr: 6.2500e-04  eta: 0:26:56  time: 0.4118  data_time: 0.0646  memory: 7796  grad_norm: 3.5522  loss: 2.9040  loss_mask: 2.7126  loss_cls: 0.1914
+11/26 08:48:06 - mmengine - INFO - Exp name: solov2_r50_fpn_1x_coco_20261126_081542
+11/26 08:48:06 - mmengine - INFO - Saving checkpoint at 6 epochs
+11/26 08:48:21 - mmengine - INFO - Epoch(val)  [6][ 50/247]    eta: 0:00:55  time: 0.2808  data_time: 0.1752  memory: 7658  
+11/26 08:48:37 - mmengine - INFO - Epoch(val)  [6][100/247]    eta: 0:00:43  time: 0.3155  data_time: 0.2097  memory: 1910  
+11/26 08:48:53 - mmengine - INFO - Epoch(val)  [6][150/247]    eta: 0:00:29  time: 0.3214  data_time: 0.2166  memory: 1855  
+11/26 08:49:01 - mmengine - INFO - Epoch(val)  [6][200/247]    eta: 0:00:12  time: 0.1699  data_time: 0.0654  memory: 1743  
+11/26 08:49:09 - mmengine - INFO - Evaluating segm...
+Loading and preparing results...
+11/26 08:49:09 - mmengine - ERROR - /mnt/users/u24vylt/.venv-mmdet/lib/python3.10/site-packages/mmdet/evaluation/metrics/coco_metric.py - compute_metrics - 465 - The testing results of the whole dataset is empty.
+11/26 08:49:09 - mmengine - INFO - Epoch(val) [6][247/247]    data_time: 0.1441  time: 0.2490
+11/26 08:49:31 - mmengine - INFO - Epoch(train)  [7][ 50/622]  lr: 6.2500e-04  eta: 0:26:25  time: 0.4497  data_time: 0.0791  memory: 7920  grad_norm: 4.5028  loss: 3.0338  loss_mask: 2.8257  loss_cls: 0.2081
+11/26 08:49:53 - mmengine - INFO - Epoch(train)  [7][100/622]  lr: 6.2500e-04  eta: 0:26:04  time: 0.4399  data_time: 0.0722  memory: 7919  grad_norm: 3.1241  loss: 3.0567  loss_mask: 2.8839  loss_cls: 0.1729
+11/26 08:50:15 - mmengine - INFO - Epoch(train)  [7][150/622]  lr: 6.2500e-04  eta: 0:25:43  time: 0.4422  data_time: 0.0732  memory: 7775  grad_norm: 11.0997  loss: 2.9568  loss_mask: 2.7230  loss_cls: 0.2337
+11/26 08:50:35 - mmengine - INFO - Epoch(train)  [7][200/622]  lr: 6.2500e-04  eta: 0:25:20  time: 0.3993  data_time: 0.0572  memory: 7908  grad_norm: 5.0831  loss: 2.9740  loss_mask: 2.7630  loss_cls: 0.2110
+11/26 08:50:57 - mmengine - INFO - Epoch(train)  [7][250/622]  lr: 6.2500e-04  eta: 0:24:59  time: 0.4394  data_time: 0.0704  memory: 7910  grad_norm: 4.7336  loss: 2.9108  loss_mask: 2.7028  loss_cls: 0.2081
+11/26 08:51:05 - mmengine - INFO - Exp name: solov2_r50_fpn_1x_coco_20261126_081542
+11/26 08:51:18 - mmengine - INFO - Epoch(train)  [7][300/622]  lr: 6.2500e-04  eta: 0:24:37  time: 0.4149  data_time: 0.0573  memory: 7922  grad_norm: 7.1462  loss: 3.0493  loss_mask: 2.7686  loss_cls: 0.2807
+11/26 08:51:40 - mmengine - INFO - Epoch(train)  [7][350/622]  lr: 6.2500e-04  eta: 0:24:16  time: 0.4368  data_time: 0.0581  memory: 7904  grad_norm: 3.3526  loss: 2.8249  loss_mask: 2.6531  loss_cls: 0.1718
+11/26 08:52:02 - mmengine - INFO - Epoch(train)  [7][400/622]  lr: 6.2500e-04  eta: 0:23:54  time: 0.4401  data_time: 0.0505  memory: 7913  grad_norm: 5.8915  loss: 2.7355  loss_mask: 2.5232  loss_cls: 0.2123
+11/26 08:52:27 - mmengine - INFO - Epoch(train)  [7][450/622]  lr: 6.2500e-04  eta: 0:23:36  time: 0.4978  data_time: 0.0786  memory: 7911  grad_norm: 3.1123  loss: 3.0757  loss_mask: 2.8842  loss_cls: 0.1915
+11/26 08:52:48 - mmengine - INFO - Epoch(train)  [7][500/622]  lr: 6.2500e-04  eta: 0:23:14  time: 0.4240  data_time: 0.0629  memory: 7900  grad_norm: 4.4018  loss: 3.0762  loss_mask: 2.8843  loss_cls: 0.1919
+11/26 08:53:09 - mmengine - INFO - Epoch(train)  [7][550/622]  lr: 6.2500e-04  eta: 0:22:52  time: 0.4284  data_time: 0.0697  memory: 7658  grad_norm: 3.6549  loss: 3.0031  loss_mask: 2.8228  loss_cls: 0.1804
+11/26 08:53:31 - mmengine - INFO - Epoch(train)  [7][600/622]  lr: 6.2500e-04  eta: 0:22:30  time: 0.4317  data_time: 0.0573  memory: 7658  grad_norm: 3.7383  loss: 2.9446  loss_mask: 2.7600  loss_cls: 0.1846
+11/26 08:53:42 - mmengine - INFO - Exp name: solov2_r50_fpn_1x_coco_20261126_081542
+11/26 08:53:42 - mmengine - INFO - Saving checkpoint at 7 epochs
+11/26 08:53:59 - mmengine - INFO - Epoch(val)  [7][ 50/247]    eta: 0:01:03  time: 0.3201  data_time: 0.2146  memory: 7654  
+11/26 08:54:16 - mmengine - INFO - Epoch(val)  [7][100/247]    eta: 0:00:48  time: 0.3435  data_time: 0.2381  memory: 2008  
+11/26 08:54:32 - mmengine - INFO - Epoch(val)  [7][150/247]    eta: 0:00:32  time: 0.3293  data_time: 0.2242  memory: 1871  
+11/26 08:54:41 - mmengine - INFO - Epoch(val)  [7][200/247]    eta: 0:00:13  time: 0.1768  data_time: 0.0726  memory: 1743  
+11/26 08:54:48 - mmengine - INFO - Evaluating segm...
+Loading and preparing results...
+11/26 08:54:48 - mmengine - ERROR - /mnt/users/u24vylt/.venv-mmdet/lib/python3.10/site-packages/mmdet/evaluation/metrics/coco_metric.py - compute_metrics - 465 - The testing results of the whole dataset is empty.
+11/26 08:54:48 - mmengine - INFO - Epoch(val) [7][247/247]    data_time: 0.1605  time: 0.2654
+11/26 08:55:10 - mmengine - INFO - Epoch(train)  [8][ 50/622]  lr: 6.2500e-04  eta: 0:22:00  time: 0.4306  data_time: 0.0722  memory: 7904  grad_norm: 3.9199  loss: 3.1563  loss_mask: 2.9567  loss_cls: 0.1996
+11/26 08:55:30 - mmengine - INFO - Epoch(train)  [8][100/622]  lr: 6.2500e-04  eta: 0:21:38  time: 0.4056  data_time: 0.0615  memory: 7920  grad_norm: 4.0146  loss: 2.9366  loss_mask: 2.7600  loss_cls: 0.1766
+11/26 08:55:50 - mmengine - INFO - Epoch(train)  [8][150/622]  lr: 6.2500e-04  eta: 0:21:15  time: 0.3961  data_time: 0.0564  memory: 7659  grad_norm: 3.7992  loss: 2.5626  loss_mask: 2.4055  loss_cls: 0.1571
+11/26 08:56:12 - mmengine - INFO - Epoch(train)  [8][200/622]  lr: 6.2500e-04  eta: 0:20:54  time: 0.4535  data_time: 0.0733  memory: 7913  grad_norm: 3.4043  loss: 2.9427  loss_mask: 2.7617  loss_cls: 0.1810
+11/26 08:56:33 - mmengine - INFO - Epoch(train)  [8][250/622]  lr: 6.2500e-04  eta: 0:20:32  time: 0.4059  data_time: 0.0594  memory: 7902  grad_norm: 6.1713  loss: 2.8374  loss_mask: 2.5828  loss_cls: 0.2546
+11/26 08:56:54 - mmengine - INFO - Epoch(train)  [8][300/622]  lr: 6.2500e-04  eta: 0:20:10  time: 0.4146  data_time: 0.0632  memory: 7892  grad_norm: 3.7797  loss: 2.9363  loss_mask: 2.7600  loss_cls: 0.1763
+11/26 08:57:16 - mmengine - INFO - Epoch(train)  [8][350/622]  lr: 6.2500e-04  eta: 0:19:49  time: 0.4494  data_time: 0.0772  memory: 7910  grad_norm: 3.4419  loss: 3.1363  loss_mask: 2.9432  loss_cls: 0.1931
+11/26 08:57:38 - mmengine - INFO - Epoch(train)  [8][400/622]  lr: 6.2500e-04  eta: 0:19:28  time: 0.4357  data_time: 0.0670  memory: 7777  grad_norm: 3.5872  loss: 2.9354  loss_mask: 2.7600  loss_cls: 0.1754
+11/26 08:57:58 - mmengine - INFO - Epoch(train)  [8][450/622]  lr: 6.2500e-04  eta: 0:19:05  time: 0.3970  data_time: 0.0525  memory: 7663  grad_norm: 3.8341  loss: 3.0136  loss_mask: 2.8425  loss_cls: 0.1711
+11/26 08:58:19 - mmengine - INFO - Epoch(train)  [8][500/622]  lr: 6.2500e-04  eta: 0:18:43  time: 0.4286  data_time: 0.0649  memory: 7656  grad_norm: 4.0976  loss: 3.0105  loss_mask: 2.8224  loss_cls: 0.1880
+11/26 08:58:41 - mmengine - INFO - Epoch(train)  [8][550/622]  lr: 6.2500e-04  eta: 0:18:22  time: 0.4373  data_time: 0.0733  memory: 7919  grad_norm: 3.9052  loss: 3.0697  loss_mask: 2.8862  loss_cls: 0.1836
+11/26 08:59:02 - mmengine - INFO - Epoch(train)  [8][600/622]  lr: 6.2500e-04  eta: 0:18:00  time: 0.4263  data_time: 0.0677  memory: 7908  grad_norm: 4.1865  loss: 3.0340  loss_mask: 2.8331  loss_cls: 0.2008
+11/26 08:59:11 - mmengine - INFO - Exp name: solov2_r50_fpn_1x_coco_20261126_081542
+11/26 08:59:11 - mmengine - INFO - Saving checkpoint at 8 epochs
+11/26 08:59:26 - mmengine - INFO - Epoch(val)  [8][ 50/247]    eta: 0:00:57  time: 0.2904  data_time: 0.1848  memory: 7776  
+11/26 08:59:42 - mmengine - INFO - Epoch(val)  [8][100/247]    eta: 0:00:45  time: 0.3275  data_time: 0.2221  memory: 1923  
+11/26 08:59:58 - mmengine - INFO - Epoch(val)  [8][150/247]    eta: 0:00:30  time: 0.3206  data_time: 0.2159  memory: 1790  
+11/26 09:00:07 - mmengine - INFO - Epoch(val)  [8][200/247]    eta: 0:00:12  time: 0.1657  data_time: 0.0611  memory: 1743  
+11/26 09:00:14 - mmengine - INFO - Evaluating segm...
+Loading and preparing results...
+11/26 09:00:14 - mmengine - ERROR - /mnt/users/u24vylt/.venv-mmdet/lib/python3.10/site-packages/mmdet/evaluation/metrics/coco_metric.py - compute_metrics - 465 - The testing results of the whole dataset is empty.
+11/26 09:00:14 - mmengine - INFO - Epoch(val) [8][247/247]    data_time: 0.1470  time: 0.2518
+11/26 09:00:24 - mmengine - INFO - Exp name: solov2_r50_fpn_1x_coco_20261126_081542
+11/26 09:00:34 - mmengine - INFO - Epoch(train)  [9][ 50/622]  lr: 6.2500e-05  eta: 0:17:29  time: 0.4127  data_time: 0.0713  memory: 7912  grad_norm: 3.2822  loss: 2.6911  loss_mask: 2.5200  loss_cls: 0.1711
+11/26 09:00:55 - mmengine - INFO - Epoch(train)  [9][100/622]  lr: 6.2500e-05  eta: 0:17:07  time: 0.4178  data_time: 0.0670  memory: 7903  grad_norm: 3.4325  loss: 3.1198  loss_mask: 2.9413  loss_cls: 0.1785
+11/26 09:01:15 - mmengine - INFO - Epoch(train)  [9][150/622]  lr: 6.2500e-05  eta: 0:16:44  time: 0.3974  data_time: 0.0538  memory: 7893  grad_norm: 4.7641  loss: 2.8338  loss_mask: 2.6496  loss_cls: 0.1842
+11/26 09:01:36 - mmengine - INFO - Epoch(train)  [9][200/622]  lr: 6.2500e-05  eta: 0:16:23  time: 0.4215  data_time: 0.0645  memory: 7904  grad_norm: 3.7387  loss: 2.9930  loss_mask: 2.8274  loss_cls: 0.1656
+11/26 09:01:58 - mmengine - INFO - Epoch(train)  [9][250/622]  lr: 6.2500e-05  eta: 0:16:01  time: 0.4300  data_time: 0.0697  memory: 7913  grad_norm: 3.4893  loss: 3.0082  loss_mask: 2.8362  loss_cls: 0.1720
+11/26 09:02:19 - mmengine - INFO - Epoch(train)  [9][300/622]  lr: 6.2500e-05  eta: 0:15:40  time: 0.4276  data_time: 0.0676  memory: 7886  grad_norm: 3.2893  loss: 2.6704  loss_mask: 2.5212  loss_cls: 0.1491
+11/26 09:02:41 - mmengine - INFO - Epoch(train)  [9][350/622]  lr: 6.2500e-05  eta: 0:15:18  time: 0.4355  data_time: 0.0706  memory: 7908  grad_norm: 3.8385  loss: 3.1175  loss_mask: 2.9461  loss_cls: 0.1714
+11/26 09:03:01 - mmengine - INFO - Epoch(train)  [9][400/622]  lr: 6.2500e-05  eta: 0:14:56  time: 0.3948  data_time: 0.0555  memory: 7659  grad_norm: 3.3947  loss: 2.8447  loss_mask: 2.7017  loss_cls: 0.1430
+11/26 09:03:22 - mmengine - INFO - Epoch(train)  [9][450/622]  lr: 6.2500e-05  eta: 0:14:35  time: 0.4207  data_time: 0.0674  memory: 7796  grad_norm: 3.5353  loss: 2.9783  loss_mask: 2.8227  loss_cls: 0.1556
+11/26 09:03:43 - mmengine - INFO - Epoch(train)  [9][500/622]  lr: 6.2500e-05  eta: 0:14:13  time: 0.4183  data_time: 0.0644  memory: 7922  grad_norm: 3.6054  loss: 2.8744  loss_mask: 2.7192  loss_cls: 0.1552
+11/26 09:04:04 - mmengine - INFO - Epoch(train)  [9][550/622]  lr: 6.2500e-05  eta: 0:13:52  time: 0.4379  data_time: 0.0722  memory: 7919  grad_norm: 3.5794  loss: 3.0463  loss_mask: 2.8832  loss_cls: 0.1631
+11/26 09:04:25 - mmengine - INFO - Epoch(train)  [9][600/622]  lr: 6.2500e-05  eta: 0:13:30  time: 0.4058  data_time: 0.0603  memory: 7911  grad_norm: 3.3246  loss: 2.9096  loss_mask: 2.7663  loss_cls: 0.1434
+11/26 09:04:34 - mmengine - INFO - Exp name: solov2_r50_fpn_1x_coco_20261126_081542
+11/26 09:04:34 - mmengine - INFO - Saving checkpoint at 9 epochs
+11/26 09:04:49 - mmengine - INFO - Epoch(val)  [9][ 50/247]    eta: 0:00:53  time: 0.2728  data_time: 0.1678  memory: 7783  
+11/26 09:05:05 - mmengine - INFO - Epoch(val)  [9][100/247]    eta: 0:00:43  time: 0.3137  data_time: 0.2091  memory: 1748  
+11/26 09:05:20 - mmengine - INFO - Epoch(val)  [9][150/247]    eta: 0:00:28  time: 0.3096  data_time: 0.2053  memory: 1743  
+11/26 09:05:29 - mmengine - INFO - Epoch(val)  [9][200/247]    eta: 0:00:12  time: 0.1726  data_time: 0.0687  memory: 1743  
+11/26 09:05:36 - mmengine - INFO - Evaluating segm...
+Loading and preparing results...
+11/26 09:05:36 - mmengine - ERROR - /mnt/users/u24vylt/.venv-mmdet/lib/python3.10/site-packages/mmdet/evaluation/metrics/coco_metric.py - compute_metrics - 465 - The testing results of the whole dataset is empty.
+11/26 09:05:36 - mmengine - INFO - Epoch(val) [9][247/247]    data_time: 0.1399  time: 0.2441
+11/26 09:05:56 - mmengine - INFO - Epoch(train) [10][ 50/622]  lr: 6.2500e-05  eta: 0:12:58  time: 0.4024  data_time: 0.0621  memory: 7911  grad_norm: 3.3548  loss: 2.9185  loss_mask: 2.7713  loss_cls: 0.1472
+11/26 09:06:16 - mmengine - INFO - Epoch(train) [10][100/622]  lr: 6.2500e-05  eta: 0:12:37  time: 0.4092  data_time: 0.0646  memory: 7775  grad_norm: 3.6319  loss: 2.8426  loss_mask: 2.7013  loss_cls: 0.1413
+11/26 09:06:39 - mmengine - INFO - Epoch(train) [10][150/622]  lr: 6.2500e-05  eta: 0:12:16  time: 0.4477  data_time: 0.0773  memory: 7919  grad_norm: 3.8115  loss: 3.0530  loss_mask: 2.8874  loss_cls: 0.1656
+11/26 09:06:59 - mmengine - INFO - Epoch(train) [10][200/622]  lr: 6.2500e-05  eta: 0:11:54  time: 0.4156  data_time: 0.0620  memory: 7920  grad_norm: 3.2525  loss: 2.8559  loss_mask: 2.7017  loss_cls: 0.1542
+11/26 09:07:21 - mmengine - INFO - Epoch(train) [10][250/622]  lr: 6.2500e-05  eta: 0:11:33  time: 0.4315  data_time: 0.0719  memory: 7912  grad_norm: 3.6072  loss: 2.9151  loss_mask: 2.7632  loss_cls: 0.1519
+11/26 09:07:42 - mmengine - INFO - Epoch(train) [10][300/622]  lr: 6.2500e-05  eta: 0:11:11  time: 0.4131  data_time: 0.0621  memory: 7791  grad_norm: 3.5079  loss: 2.9071  loss_mask: 2.7646  loss_cls: 0.1425
+11/26 09:08:02 - mmengine - INFO - Epoch(train) [10][350/622]  lr: 6.2500e-05  eta: 0:10:49  time: 0.4146  data_time: 0.0637  memory: 7796  grad_norm: 5.3187  loss: 2.8333  loss_mask: 2.6452  loss_cls: 0.1881
+11/26 09:08:24 - mmengine - INFO - Epoch(train) [10][400/622]  lr: 6.2500e-05  eta: 0:10:28  time: 0.4281  data_time: 0.0688  memory: 7777  grad_norm: 3.3889  loss: 2.9107  loss_mask: 2.7628  loss_cls: 0.1480
+11/26 09:08:25 - mmengine - INFO - Exp name: solov2_r50_fpn_1x_coco_20261126_081542
+11/26 09:08:44 - mmengine - INFO - Epoch(train) [10][450/622]  lr: 6.2500e-05  eta: 0:10:06  time: 0.4142  data_time: 0.0652  memory: 7902  grad_norm: 3.5717  loss: 2.9280  loss_mask: 2.7750  loss_cls: 0.1530
+11/26 09:09:06 - mmengine - INFO - Epoch(train) [10][500/622]  lr: 6.2500e-05  eta: 0:09:45  time: 0.4239  data_time: 0.0665  memory: 7890  grad_norm: 3.5932  loss: 3.0375  loss_mask: 2.8860  loss_cls: 0.1514
+11/26 09:09:25 - mmengine - INFO - Epoch(train) [10][550/622]  lr: 6.2500e-05  eta: 0:09:23  time: 0.3914  data_time: 0.0537  memory: 7913  grad_norm: 3.8278  loss: 2.9102  loss_mask: 2.7600  loss_cls: 0.1502
+11/26 09:09:47 - mmengine - INFO - Epoch(train) [10][600/622]  lr: 6.2500e-05  eta: 0:09:02  time: 0.4268  data_time: 0.0677  memory: 7919  grad_norm: 3.6749  loss: 3.0642  loss_mask: 2.8996  loss_cls: 0.1647
+11/26 09:09:56 - mmengine - INFO - Exp name: solov2_r50_fpn_1x_coco_20261126_081542
+11/26 09:09:56 - mmengine - INFO - Saving checkpoint at 10 epochs
+11/26 09:10:10 - mmengine - INFO - Epoch(val) [10][ 50/247]    eta: 0:00:55  time: 0.2840  data_time: 0.1788  memory: 7904  
+11/26 09:10:26 - mmengine - INFO - Epoch(val) [10][100/247]    eta: 0:00:44  time: 0.3191  data_time: 0.2141  memory: 1774  
+11/26 09:10:42 - mmengine - INFO - Epoch(val) [10][150/247]    eta: 0:00:29  time: 0.3045  data_time: 0.1996  memory: 1743  
+11/26 09:10:50 - mmengine - INFO - Epoch(val) [10][200/247]    eta: 0:00:12  time: 0.1673  data_time: 0.0633  memory: 1743  
+11/26 09:10:57 - mmengine - INFO - Evaluating segm...
+Loading and preparing results...
+11/26 09:10:57 - mmengine - ERROR - /mnt/users/u24vylt/.venv-mmdet/lib/python3.10/site-packages/mmdet/evaluation/metrics/coco_metric.py - compute_metrics - 465 - The testing results of the whole dataset is empty.
+11/26 09:10:57 - mmengine - INFO - Epoch(val) [10][247/247]    data_time: 0.1407  time: 0.2453
+11/26 09:11:19 - mmengine - INFO - Epoch(train) [11][ 50/622]  lr: 6.2500e-05  eta: 0:08:31  time: 0.4321  data_time: 0.0731  memory: 7902  grad_norm: 3.3431  loss: 2.9733  loss_mask: 2.8295  loss_cls: 0.1438
+11/26 09:11:40 - mmengine - INFO - Epoch(train) [11][100/622]  lr: 6.2500e-05  eta: 0:08:09  time: 0.4189  data_time: 0.0668  memory: 7913  grad_norm: 4.0657  loss: 2.9183  loss_mask: 2.7600  loss_cls: 0.1583
+11/26 09:12:02 - mmengine - INFO - Epoch(train) [11][150/622]  lr: 6.2500e-05  eta: 0:07:48  time: 0.4419  data_time: 0.0748  memory: 7919  grad_norm: 5.6110  loss: 2.9644  loss_mask: 2.7682  loss_cls: 0.1961
+11/26 09:12:22 - mmengine - INFO - Epoch(train) [11][200/622]  lr: 6.2500e-05  eta: 0:07:26  time: 0.4102  data_time: 0.0610  memory: 7893  grad_norm: 3.4592  loss: 2.8504  loss_mask: 2.7041  loss_cls: 0.1464
+11/26 09:12:43 - mmengine - INFO - Epoch(train) [11][250/622]  lr: 6.2500e-05  eta: 0:07:05  time: 0.4079  data_time: 0.0620  memory: 7922  grad_norm: 3.4372  loss: 2.9694  loss_mask: 2.8200  loss_cls: 0.1494
+11/26 09:13:02 - mmengine - INFO - Epoch(train) [11][300/622]  lr: 6.2500e-05  eta: 0:06:43  time: 0.3996  data_time: 0.0570  memory: 7655  grad_norm: 3.5023  loss: 2.8447  loss_mask: 2.7033  loss_cls: 0.1413
+11/26 09:13:23 - mmengine - INFO - Epoch(train) [11][350/622]  lr: 6.2500e-05  eta: 0:06:22  time: 0.4040  data_time: 0.0597  memory: 7911  grad_norm: 3.5672  loss: 2.8050  loss_mask: 2.6664  loss_cls: 0.1386
+11/26 09:13:43 - mmengine - INFO - Epoch(train) [11][400/622]  lr: 6.2500e-05  eta: 0:06:00  time: 0.4027  data_time: 0.0586  memory: 7898  grad_norm: 3.8066  loss: 2.9084  loss_mask: 2.7612  loss_cls: 0.1472
+11/26 09:14:05 - mmengine - INFO - Epoch(train) [11][450/622]  lr: 6.2500e-05  eta: 0:05:39  time: 0.4373  data_time: 0.0687  memory: 7900  grad_norm: 4.5655  loss: 2.9936  loss_mask: 2.8228  loss_cls: 0.1708
+11/26 09:14:25 - mmengine - INFO - Epoch(train) [11][500/622]  lr: 6.2500e-05  eta: 0:05:17  time: 0.4147  data_time: 0.0641  memory: 7898  grad_norm: 3.5566  loss: 2.9034  loss_mask: 2.7600  loss_cls: 0.1434
+11/26 09:14:46 - mmengine - INFO - Epoch(train) [11][550/622]  lr: 6.2500e-05  eta: 0:04:56  time: 0.4049  data_time: 0.0615  memory: 7904  grad_norm: 3.6805  loss: 2.7874  loss_mask: 2.6456  loss_cls: 0.1418
+11/26 09:15:06 - mmengine - INFO - Epoch(train) [11][600/622]  lr: 6.2500e-05  eta: 0:04:34  time: 0.4079  data_time: 0.0613  memory: 7904  grad_norm: 3.8579  loss: 3.0473  loss_mask: 2.8930  loss_cls: 0.1543
+11/26 09:15:16 - mmengine - INFO - Exp name: solov2_r50_fpn_1x_coco_20261126_081542
+11/26 09:15:16 - mmengine - INFO - Saving checkpoint at 11 epochs
+11/26 09:15:31 - mmengine - INFO - Epoch(val) [11][ 50/247]    eta: 0:00:55  time: 0.2811  data_time: 0.1758  memory: 7912  
+11/26 09:15:47 - mmengine - INFO - Epoch(val) [11][100/247]    eta: 0:00:43  time: 0.3143  data_time: 0.2095  memory: 1784  
+11/26 09:16:03 - mmengine - INFO - Epoch(val) [11][150/247]    eta: 0:00:29  time: 0.3185  data_time: 0.2138  memory: 1743  
+11/26 09:16:11 - mmengine - INFO - Epoch(val) [11][200/247]    eta: 0:00:12  time: 0.1688  data_time: 0.0650  memory: 1743  
+11/26 09:16:19 - mmengine - INFO - Evaluating segm...
+Loading and preparing results...
+11/26 09:16:19 - mmengine - ERROR - /mnt/users/u24vylt/.venv-mmdet/lib/python3.10/site-packages/mmdet/evaluation/metrics/coco_metric.py - compute_metrics - 465 - The testing results of the whole dataset is empty.
+11/26 09:16:19 - mmengine - INFO - Epoch(val) [11][247/247]    data_time: 0.1434  time: 0.2479
+11/26 09:16:38 - mmengine - INFO - Epoch(train) [12][ 50/622]  lr: 6.2500e-06  eta: 0:04:04  time: 0.3913  data_time: 0.0565  memory: 7886  grad_norm: 3.8990  loss: 2.8521  loss_mask: 2.7000  loss_cls: 0.1521
+11/26 09:17:00 - mmengine - INFO - Epoch(train) [12][100/622]  lr: 6.2500e-06  eta: 0:03:42  time: 0.4262  data_time: 0.0685  memory: 7910  grad_norm: 5.0646  loss: 2.6900  loss_mask: 2.5232  loss_cls: 0.1668
+11/26 09:17:20 - mmengine - INFO - Epoch(train) [12][150/622]  lr: 6.2500e-06  eta: 0:03:21  time: 0.4009  data_time: 0.0544  memory: 7902  grad_norm: 3.6304  loss: 2.9845  loss_mask: 2.8330  loss_cls: 0.1515
+11/26 09:17:23 - mmengine - INFO - Exp name: solov2_r50_fpn_1x_coco_20261126_081542
+11/26 09:17:41 - mmengine - INFO - Epoch(train) [12][200/622]  lr: 6.2500e-06  eta: 0:03:00  time: 0.4345  data_time: 0.0716  memory: 7922  grad_norm: 3.7588  loss: 2.9847  loss_mask: 2.8331  loss_cls: 0.1516
+11/26 09:18:02 - mmengine - INFO - Epoch(train) [12][250/622]  lr: 6.2500e-06  eta: 0:02:38  time: 0.4133  data_time: 0.0620  memory: 7913  grad_norm: 3.5736  loss: 2.7877  loss_mask: 2.6411  loss_cls: 0.1466
+11/26 09:18:23 - mmengine - INFO - Epoch(train) [12][300/622]  lr: 6.2500e-06  eta: 0:02:17  time: 0.4202  data_time: 0.0676  memory: 7919  grad_norm: 3.6156  loss: 2.9805  loss_mask: 2.8251  loss_cls: 0.1554
+11/26 09:18:42 - mmengine - INFO - Epoch(train) [12][350/622]  lr: 6.2500e-06  eta: 0:01:55  time: 0.3875  data_time: 0.0542  memory: 7904  grad_norm: 3.5317  loss: 2.8438  loss_mask: 2.7012  loss_cls: 0.1426
+11/26 09:19:04 - mmengine - INFO - Epoch(train) [12][400/622]  lr: 6.2500e-06  eta: 0:01:34  time: 0.4266  data_time: 0.0674  memory: 7664  grad_norm: 3.5086  loss: 3.0468  loss_mask: 2.9046  loss_cls: 0.1422
+11/26 09:19:23 - mmengine - INFO - Epoch(train) [12][450/622]  lr: 6.2500e-06  eta: 0:01:13  time: 0.3930  data_time: 0.0550  memory: 7898  grad_norm: 3.4611  loss: 2.8301  loss_mask: 2.7000  loss_cls: 0.1301
+11/26 09:19:45 - mmengine - INFO - Epoch(train) [12][500/622]  lr: 6.2500e-06  eta: 0:00:51  time: 0.4267  data_time: 0.0674  memory: 7900  grad_norm: 4.2507  loss: 2.9805  loss_mask: 2.8245  loss_cls: 0.1560
+11/26 09:20:07 - mmengine - INFO - Epoch(train) [12][550/622]  lr: 6.2500e-06  eta: 0:00:30  time: 0.4433  data_time: 0.0760  memory: 7919  grad_norm: 3.5869  loss: 2.9109  loss_mask: 2.7614  loss_cls: 0.1495
+11/26 09:20:28 - mmengine - INFO - Epoch(train) [12][600/622]  lr: 6.2500e-06  eta: 0:00:09  time: 0.4172  data_time: 0.0599  memory: 7783  grad_norm: 3.5923  loss: 3.0896  loss_mask: 2.9464  loss_cls: 0.1431
+11/26 09:20:37 - mmengine - INFO - Exp name: solov2_r50_fpn_1x_coco_20261126_081542
+11/26 09:20:37 - mmengine - INFO - Saving checkpoint at 12 epochs
+11/26 09:20:52 - mmengine - INFO - Epoch(val) [12][ 50/247]    eta: 0:00:54  time: 0.2790  data_time: 0.1740  memory: 7637  
+11/26 09:21:09 - mmengine - INFO - Epoch(val) [12][100/247]    eta: 0:00:44  time: 0.3263  data_time: 0.2209  memory: 1761  
+11/26 09:21:24 - mmengine - INFO - Epoch(val) [12][150/247]    eta: 0:00:29  time: 0.3091  data_time: 0.2049  memory: 1743  
+11/26 09:21:32 - mmengine - INFO - Epoch(val) [12][200/247]    eta: 0:00:12  time: 0.1681  data_time: 0.0638  memory: 1743  
+11/26 09:21:40 - mmengine - INFO - Evaluating segm...
+Loading and preparing results...
+11/26 09:21:40 - mmengine - ERROR - /mnt/users/u24vylt/.venv-mmdet/lib/python3.10/site-packages/mmdet/evaluation/metrics/coco_metric.py - compute_metrics - 465 - The testing results of the whole dataset is empty.
+11/26 09:21:40 - mmengine - INFO - Epoch(val) [12][247/247]    data_time: 0.1437  time: 0.2482
+Traceback (most recent call last):
+  File "/mnt/users/u24vylt/ml26/baselines/mmdet_adapter.py", line 256, in <module>
+    main()
+  File "/mnt/users/u24vylt/ml26/baselines/mmdet_adapter.py", line 241, in main
+    raise RuntimeError(
+RuntimeError: MMDetection did not produce a best validation checkpoint in /mnt/users/u24vylt/ml26/outputs/baseline_work/magfilo_v1/solov2/seed3020
+[2026-11-26T09:21:41+00:00] END method=solov2 seed=3020 status=1
